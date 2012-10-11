@@ -11,6 +11,11 @@ try:
 except:
     pass
 
+config_list = [
+               "config/lcg-info-dynamic-scheduler-pbs-maui.conf",
+               "config/lcg-info-dynamic-scheduler-pbs-unknown.conf"
+              ]
+
 libexec_list = [
                 "src/lrmsinfo-pbs",
                 "src/vomaxjobs-maui"
@@ -25,9 +30,10 @@ plugins here are for Maui (scheduler) and PBS/Torque (LRMS).''',
       license='Apache Software License',
       author='CREAM group, Jeff Templon',
       author_email='CREAM group <cream-support@lists.infn.it>',
-      py_modules=['pbsServer', 'torque_utils', 'lrms.py'],
+      py_modules=['pbsServer', 'torque_utils', 'lrms'],
       package_dir = {'': 'src'},
       data_files=[
+                  ('usr/share/lcg-info-dynamic-scheduler-pbs/templates', config_list),
                   ('usr/libexec', libexec_list)
                  ]
      )
