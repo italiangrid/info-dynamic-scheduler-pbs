@@ -63,15 +63,37 @@ class CPUInfoHandler(Thread):
 
     def __init__(self):
         Thread.__init__(self)
-        self.totalCPU = -1
-        self.freeCPU = -1
+        self.totalCPU = 0
+        self.freeCPU = 0
+        self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
     
     def setStream(self, stream):
         self.stream = stream
       
     def run(self):
+        currState = None
         line = self.stream.readline()
         while line:
+            parsed = self.pRegex.match(line)
+            if parsed:
+                if parsed.group(1) == 'state':
+                
+                    currState = parsed.group(2).strip()
+                
+                elif parsed.group(1) == 'np':
+                
+                    procNum = int(parsed.group(2).strip())
+                    if currState <> 'down' and currState <> 'offline':
+                        self.totalCPU += procNum
+                    if currState == 'free':
+                        self.freeCPU += procNum
+                
+                elif parsed.group(1) == 'jobs':
+                    
+                    jobs = parsed.group(2).strip().split(', ')
+                    if currState == 'free':
+                        self.freeCPU -= len(jobs)
+                
             line = self.stream.readline()
 
 
@@ -231,9 +253,6 @@ def main():
     exitCode, errMsg = runCommand("pbsnodes -a -s %s" % config["pbs-host"], cpuInfoHandler)
     if exitCode <> 0:
         sys.stderr.write(errMsg + '\n')
-        sys.exit(1)
-    if cpuInfoHandler.totalCPU < 0 or cpuInfoHandler.freeCPU < 0 :
-        sys.stderr.write("Cannot retrieve CPU info\n")
         sys.exit(1)
     
     print "LRMS version number %s" % verHandler.version
