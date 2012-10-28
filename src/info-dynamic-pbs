@@ -103,17 +103,18 @@ class QueueInfoHandler(Thread):
         Thread.__init__(self)
         self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
         self.cputRegex = re.compile('(\d+):(\d+):(\d+)')
-        self.maxCPUtime = 0
-        self.defaultCPUtime = 0
-        self.maxPCPUtime = 0
-        self.defaultPCPUtime = 0
-        self.maxTotJobs = 0
-        self.maxRunJobs = 0
-        self.policyPriority = ''
-        self.maxWallTime = 0
-        self.defaultWallTime = 0
-        self.maxProcTime = 0
-        self.defaultProcTime = 0
+        self.maxCPUtime = -1
+        self.defaultCPUtime = -1
+        self.maxPCPUtime = -1
+        self.defaultPCPUtime = -1
+        self.maxTotJobs = -1
+        self.maxRunJobs = -1
+        self.policyPriority = None
+        self.maxWallTime = -1
+        self.defaultWallTime = -1
+        self.obtWallTime = -1
+        self.maxProcTime = -1
+        self.defaultProcTime = -1
         self.enabled = False
         self.started = False
         self.state = 'Closed'
@@ -199,7 +200,28 @@ class QueueInfoHandler(Thread):
             if self.started:
                 self.state = 'Draining'
             
-        #TODO re-arrange values
+        if self.defaultCPUtime <> -1 and self.defaultPCPUtime <> -1:
+            self.defaultCPUtime = min(self.defaultCPUtime, self.defaultPCPUtime)
+        if self.defaultPCPUtime <> -1:
+            self.defaultCPUtime = self.defaultPCPUtime
+            
+        if self.maxCPUtime <> -1 and self.maxPCPUtime <> -1:
+            self.maxCPUtime = min(self.maxCPUtime, self.maxPCPUtime)
+        if self.maxPCPUtime <> -1:
+            self.maxCPUtime = self.maxPCPUtime
+
+        if self.maxCPUtime == -1 and self.defaultCPUtime <> -1:
+            self.maxCPUtime = self.defaultCPUtime
+        
+        if self.maxWallTime <> -1:
+            self.obtWallTime = self.maxWallTime
+                
+        if self.maxWallTime == -1 and self.defaultWallTime <> -1:
+            self.maxWallTime = self.defaultWallTime
+
+        if self.maxProcTime == -1 and self.defaultProcTime <> -1:
+            self.maxProcTime = self.defaultProcTime
+
 
 def runCommand(cmdline, stdout_thread):
 
@@ -349,9 +371,6 @@ def main():
     if exitCode <> 0:
         sys.stderr.write(errMsg + '\n')
         sys.exit(1)
-    if verHandler.version == None:
-        sys.stderr.write("Cannot retrieve Torque version\n")
-        sys.exit(1)
         
     cpuInfoHandler = CPUInfoHandler()
     exitCode, errMsg = runCommand("pbsnodes -a -s %s" % config["pbs-host"], cpuInfoHandler)
@@ -359,8 +378,6 @@ def main():
         sys.stderr.write(errMsg + '\n')
         sys.exit(1)
     
-    print "LRMS version number %s" % verHandler.version
-    print "Total CPU: %d, Free CPU: %d" % (cpuInfoHandler.totalCPU, cpuInfoHandler.freeCPU)
 
     allQueues = set()
     for queue in glue1QueueTable.values():
@@ -377,6 +394,78 @@ def main():
         if exitCode <> 0:
             sys.stderr.write(errMsg + '\n')
             sys.exit(1)
+
+    out = sys.stdout
+    
+    if config['outputformat'] <> "glue2":
+
+        for glue1DN in glue1QueueTable:
+        
+            queue = glue1QueueTable[glue1DN]
+            qInfo = qInfoHandlers[queue]
+            
+            out.write(glue1DN + '\n')
+            if verHandler.version:
+                out.write('GlueCEInfoLRMSVersion: %s\n' % verHandler.version)
+            
+            out.write('GlueCEInfoTotalCPUs: %d\n' % cpuInfoHandler.totalCPU)
+            out.write('GlueCEPolicyAssignedJobSlots: %d\n' % cpuInfoHandler.totalCPU)
+            out.write('GlueCEStateFreeCPUs: %d\n' % cpuInfoHandler.freeCPU)
+            
+            if qInfo.maxCPUtime <> -1:
+                out.write('GlueCEPolicyMaxCPUTime: %d\n' % qInfo.maxCPUtime)
+                out.write('GlueCEPolicyMaxObtainableCPUTime: %d\n' % qInfo.maxCPUtime)
+                
+            if qInfo.maxTotJobs <> -1:
+                out.write('GlueCEPolicyMaxTotalJobs: %d\n' % qInfo.maxTotJobs)
+                
+            if qInfo.policyPriority:
+                out.write('GlueCEPolicyPriority: %s\n' % qInfo.policyPriority)
+                
+            if qInfo.maxRunJobs <> -1:
+                out.write('GlueCEPolicyMaxRunningJobs: %d\n' % qInfo.maxRunJobs)
+                
+            if qInfo.maxWallTime <> -1:
+                out.write('GlueCEPolicyMaxWallClockTime: %d\n' % qInfo.maxWallTime)
+                
+            if qInfo.obtWallTime <> -1:
+                out.write('GlueCEPolicyMaxObtainableWallClockTime: %d\n' % qInfo.obtWallTime)
+                
+            if qInfo.maxProcTime <> -1:
+                out.write('GlueCEPolicyMaxSlotsPerJob: %d\n' % qInfo.maxProcTime)
+                
+            out.write('GlueCEStateStatus: %s\n' % qInfo.state)
+            out.write('\n')
+
+
+    if config['outputformat'] <> "glue1":
+
+        for managerDN in managerTable:
+        
+            out.write(managerDN + '\n')
+            if verHandler.version:
+                out.write('GLUE2ManagerProductVersion: %s\n' % verHandler.version)
+            out.write('GLUE2EntityCreationTime: %s\n' % now)
+            out.write('\n')
+            
+        for glue2DN in glue2QueueTable:
+            queue = glue2QueueTable[glue2DN]
+            qInfo = qInfoHandlers[queue]
+            
+            out.write(glue2DN + '\n')
+            if qInfo.maxCPUtime <> -1:
+                out.write('GLUE2ComputingShareDefaultCPUTime: %d\n' % qInfo.maxCPUtime)
+                out.write('GLUE2ComputingShareMaxCPUTime: %d\n' % qInfo.maxCPUtime)
+            if qInfo.maxWallTime <> -1:
+                out.write('GLUE2ComputingShareDefaultWallTime: %d\n' % qInfo.maxWallTime)
+            if qInfo.obtWallTime <> -1:
+                out.write('GLUE2ComputingShareMaxWallTime: %d\n' % qInfo.obtWallTime)
+            if qInfo.maxProcTime <> -1:
+                out.write('GLUE2ComputingShareMaxSlotsPerJob: %d\n' % qInfo.maxProcTime)
+                
+            out.write('GLUE2ComputingShareServingState: %s\n' % qInfo.state.lower())
+            out.write('GLUE2EntityCreationTime: %s\n' % now)
+            out.write('\n')
 
 
 
