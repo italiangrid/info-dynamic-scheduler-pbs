@@ -17,6 +17,7 @@ config_list = [
               ]
 
 libexec_list = [
+                "src/info-dynamic-pbs",
                 "src/lrmsinfo-pbs",
                 "src/vomaxjobs-maui"
                ]
