@@ -16,52 +16,61 @@
 # limitations under the License.
 # get information from pbs/torque LRMS, spit it out in uniform format
 
+
+import sys
+import getopt
+import time
+
+from TorqueInfoUtils import PBSNodesHandler
+from TorqueInfoUtils import QStatHandler
+
 def usage():
     print "Usage: lrmsinfo-pbs [-i <input_file>]"
     print "  input_file : optional text file containing 'qstat -f' output"
 
-import sys
-import getopt
-import string
+class StreamContainer:
 
-from pbsServer import LiveServer
-
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "i:",
-                               ["input="])
-except getopt.GetoptError:
-    # print help information and exit:
-    print sys.argv[0] + ": error parsing command line: " + \
-          string.join(sys.argv)
-    usage()
-    sys.exit(2)
-
-infile = None
-
-for o, a in opts:
-    if o in ("-i", "--input"):
-        infile = a
+    def __init__(self, stream):
+        self.stream = stream
         
-if infile:
-    cmd = '/bin/cat ' + infile
-else:
-    cmd = 'diagnose -g'
+    def append(self, table):
+        self.stream.write(str(table) + "\n")
 
-#sys.path.append('@TARGPREFIX@/@MODSUFFIX@')
+def main():
+    try:
+        infile = None
+        
+        opts, args = getopt.getopt(sys.argv[1:], "i:", ["input="])
+        for optName, optValue in opts:
+            if optName in ("-i", "--input"):
+                infile = optValue
+        
+        ncpu, freecpu = PBSNodesHandler.parse()
+        sys.stdout.write("nactive      %d\n" % ncpu)
+        sys.stdout.write("nfree        %d\n" % freecpu)
+        sys.stdout.write("now          %d\n" % int(time.time()))
+        #
+        # TODO verify schedCycle
+        #
+        sys.stdout.write("schedCycle   26\n")
 
-if infile:
-    bq = LiveServer(file=infile)
-else:
-    bq = LiveServer()
+        
+        sContainer = StreamContainer(sys.stdout)
+        QStatHandler.parse(sContainer, infile)        
 
-tf = sys.stdout
-tf.write("nactive      %d\n" % (bq.slotsUp))
-tf.write("nfree        %d\n" % (bq.slotsFree))
-tf.write("now          %d\n" % (bq.now))
-tf.write("schedCycle   %d\n" % (bq.schedCycle))
+    except getopt.GetoptError:
+        print sys.argv[0] + ": error parsing command line\n"
+        usage()
+        sys.exit(2)
+    except:
+        etype, evalue, etraceback = sys.exc_info()
+        print "%s: (%s)" % (etype, evalue)
+        sys.exit(3)
 
-for job in bq.jobs():
-    tf.write(job.attDictString() + "\n")
-    
-tf.close()
+
+
+
+if __name__ == "__main__":
+    main()
+
 
