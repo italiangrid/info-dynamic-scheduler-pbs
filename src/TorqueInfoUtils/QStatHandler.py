@@ -84,11 +84,11 @@ class PBSJobHandler(Thread):
                 
                     currTable['user'] = value
                 
-                if key == 'egroup':
+                elif key == 'egroup':
                 
                     currTable['group'] = value
                 
-                if key == 'Job_Owner':
+                elif key == 'Job_Owner':
                     tmpt = value.split('@')
                     if len(tmpt) == 2:
                         currTable['user'] = tmpt[0]
@@ -98,40 +98,40 @@ class PBSJobHandler(Thread):
                         except:
                             etype, evalue, etraceback = sys.exc_info()
                 
-                if key == 'job_state':
+                elif key == 'job_state':
                 
                     currTable['state'] = self._convertState(value)
                 
-                if key == 'queue':
+                elif key == 'queue':
                 
                     currTable['queue'] = value
                 
-                if key == 'qtime':
+                elif key == 'qtime':
                 
                     currTable['qtime'] = self._convertTimeStr(value)
                     
-                if key == 'Resource_List.walltime':
+                elif key == 'Resource_List.walltime':
                     
                     tmpt = value.split(':')
                     if len(tmpt) == 3:
                         currTable['maxwalltime'] = int(tmpt[0]) * 3600 + int(tmpt[1]) * 60 + int(tmpt[2])
                 
-                if key == 'start_time':
+                elif key == 'start_time':
                 
                     currTable['start'] = self._convertTimeStr(value)
                     currTable['startAnchor'] = 'start_time'
                 
-                if key == 'resources_used.walltime':
+                elif key == 'resources_used.walltime':
                 
                     tmpt = value.split(':')
                     if len(tmpt) == 3:
                         currTable['walltime'] = int(tmpt[0]) * 3600 + int(tmpt[1]) * 60 + int(tmpt[2])
                 
-                if key == 'Job_Name':
+                elif key == 'Job_Name':
                 
                     currTable['name'] = value
                 
-                if key == 'exec_host':
+                elif key == 'exec_host':
                 
                     currTable['cpucount'] = value.count('+') + 1
                 
@@ -161,7 +161,21 @@ class PBSJobHandler(Thread):
             
             line = self.stream.readline()
 
+        if not 'user' in currTable:
+            self.errList.append("Cannot find user for " + currTable['jobid'])
+        if not 'group' in currTable:
+            self.errList.append("Cannot find user for " + currTable['jobid'])
+        if 'walltime' in currTable:
+            if not 'start' in currTable:
+                currTable['start'] = now - currTable['walltime']
+                currTable['startAnchor'] = 'resources_used.walltime'
+        else:
+            if 'start' in currTable:
+                currTable['walltime'] = now - currTable['start']
+        
+        self.container.append(currTable)
 
+        # end of thread
 
 
 
@@ -196,5 +210,10 @@ def parse(resultContainer, filename=None):
         raise Exception("%s: (%s)" % (etype, evalue))
         
 
-
+if __name__ == "__main__":
+    
+    result = list()
+    parse(result, sys.argv[1])
+    for tmpt in result:
+        print tmpt
 
