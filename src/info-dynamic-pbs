@@ -113,8 +113,8 @@ class QueueInfoHandler(Thread):
         self.maxWallTime = -1
         self.defaultWallTime = -1
         self.obtWallTime = -1
-        self.maxProcTime = -1
-        self.defaultProcTime = -1
+        self.maxProcCount = -1
+        self.defaultProcCount = -1
         self.enabled = False
         self.started = False
         self.state = 'Closed'
@@ -173,11 +173,11 @@ class QueueInfoHandler(Thread):
                     
                 elif parsed.group(1) == 'resources_max.procct':
                 
-                    self.maxProcTime = self.conv(parsed.group(2))
+                    self.maxProcCount = int(parsed.group(2).strip())
                     
                 elif parsed.group(1) == 'resources_default.procct':
                 
-                    self.defaultProcTime = self.conv(parsed.group(2))
+                    self.defaultProcCount = int(parsed.group(2).strip())
                     
                 elif parsed.group(1) == 'enabled' and parsed.group(2).strip() == 'True':
                     
@@ -219,8 +219,8 @@ class QueueInfoHandler(Thread):
         if self.maxWallTime == -1 and self.defaultWallTime <> -1:
             self.maxWallTime = self.defaultWallTime
 
-        if self.maxProcTime == -1 and self.defaultProcTime <> -1:
-            self.maxProcTime = self.defaultProcTime
+        if self.maxProcCount == -1 and self.defaultProcCount <> -1:
+            self.maxProcCount = self.defaultProcCount
 
 
 def runCommand(cmdline, stdout_thread):
@@ -413,8 +413,8 @@ def main():
             out.write('GlueCEStateFreeCPUs: %d\n' % cpuInfoHandler.freeCPU)
             
             if qInfo.maxCPUtime <> -1:
-                out.write('GlueCEPolicyMaxCPUTime: %d\n' % qInfo.maxCPUtime)
-                out.write('GlueCEPolicyMaxObtainableCPUTime: %d\n' % qInfo.maxCPUtime)
+                out.write('GlueCEPolicyMaxCPUTime: %d\n' % (qInfo.maxCPUtime / 60))
+                out.write('GlueCEPolicyMaxObtainableCPUTime: %d\n' % (qInfo.maxCPUtime / 60))
                 
             if qInfo.maxTotJobs <> -1:
                 out.write('GlueCEPolicyMaxTotalJobs: %d\n' % qInfo.maxTotJobs)
@@ -426,13 +426,13 @@ def main():
                 out.write('GlueCEPolicyMaxRunningJobs: %d\n' % qInfo.maxRunJobs)
                 
             if qInfo.maxWallTime <> -1:
-                out.write('GlueCEPolicyMaxWallClockTime: %d\n' % qInfo.maxWallTime)
+                out.write('GlueCEPolicyMaxWallClockTime: %d\n' % (qInfo.maxWallTime / 60))
                 
             if qInfo.obtWallTime <> -1:
-                out.write('GlueCEPolicyMaxObtainableWallClockTime: %d\n' % qInfo.obtWallTime)
+                out.write('GlueCEPolicyMaxObtainableWallClockTime: %d\n' % (qInfo.obtWallTime / 60))
                 
-            if qInfo.maxProcTime <> -1:
-                out.write('GlueCEPolicyMaxSlotsPerJob: %d\n' % qInfo.maxProcTime)
+            if qInfo.maxProcCount <> -1:
+                out.write('GlueCEPolicyMaxSlotsPerJob: %d\n' % qInfo.maxProcCount)
                 
             out.write('GlueCEStateStatus: %s\n' % qInfo.state)
             out.write('\n')
@@ -460,8 +460,8 @@ def main():
                 out.write('GLUE2ComputingShareDefaultWallTime: %d\n' % qInfo.maxWallTime)
             if qInfo.obtWallTime <> -1:
                 out.write('GLUE2ComputingShareMaxWallTime: %d\n' % qInfo.obtWallTime)
-            if qInfo.maxProcTime <> -1:
-                out.write('GLUE2ComputingShareMaxSlotsPerJob: %d\n' % qInfo.maxProcTime)
+            if qInfo.maxProcCount <> -1:
+                out.write('GLUE2ComputingShareMaxSlotsPerJob: %d\n' % qInfo.maxProcCount)
                 
             out.write('GLUE2ComputingShareServingState: %s\n' % qInfo.state.lower())
             out.write('GLUE2EntityCreationTime: %s\n' % now)
