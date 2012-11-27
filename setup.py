@@ -29,9 +29,8 @@ setup(
       long_description='''Plugins for the lcg-info-dynamic-scheduler GIP plugin.  The two 
 plugins here are for Maui (scheduler) and PBS/Torque (LRMS).''',
       license='Apache Software License',
-      author='CREAM group, Jeff Templon',
       author_email='CREAM group <cream-support@lists.infn.it>',
-      py_modules=['pbsServer', 'torque_utils', 'lrms'],
+      packages=['TorqueInfoUtils'],
       package_dir = {'': 'src'},
       data_files=[
                   ('usr/share/lcg-info-dynamic-scheduler-pbs/templates', config_list),
