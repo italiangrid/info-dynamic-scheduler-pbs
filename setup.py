@@ -34,6 +34,7 @@ plugins here are for Maui (scheduler) and PBS/Torque (LRMS).''',
       package_dir = {'': 'src'},
       data_files=[
                   ('usr/share/lcg-info-dynamic-scheduler-pbs/templates', config_list),
+                  ('etc/lrms', ['config/pbs.conf']),
                   ('usr/libexec', libexec_list)
                  ]
      )
