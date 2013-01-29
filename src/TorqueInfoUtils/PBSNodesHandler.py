@@ -74,8 +74,6 @@ class PBSNodesHandler(Thread):
                 
                     if len(value) > 0:
                         currTable['njob'] = value.count(',') + 1
-                    else:
-                        currTable['njob'] = 0
                                         
             else:
             
@@ -88,56 +86,51 @@ class PBSNodesHandler(Thread):
                     currTable = dict()
                     currTable['name'] = nodeName
                     currTable['up'] = False
-            
+                    currTable['njob'] = 0
+                    currTable['ncpu'] = 0
             
             line = self.stream.readline()
 
         if currTable <> None:                            
             self.container.append(currTable)
         
-        #end of thread
+    #end of thread
 
 def parse(nodeList=[""], filename=None):
 
     ncpu = 0
     njob = 0
     
-    try:
-    
-        for nodeId in nodeList:
-            if filename:
-                cmd = shlex.split('cat ' + filename)
-            else:
-                cmd = shlex.split('pbsnodes -a ' + nodeId)
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    for nodeId in nodeList:
+        if filename:
+            cmd = shlex.split('cat ' + filename)
+        else:
+            cmd = shlex.split('pbsnodes -a ' + nodeId)
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
-            stdout_thread = PBSNodesHandler(process.stdout)
-            stderr_thread = ErrorHandler(process.stderr)
+        stdout_thread = PBSNodesHandler(process.stdout)
+        stderr_thread = ErrorHandler(process.stderr)
         
-            stdout_thread.start()
-            stderr_thread.start()
+        stdout_thread.start()
+        stderr_thread.start()
         
-            ret_code = process.wait()
+        ret_code = process.wait()
         
-            stdout_thread.join()
-            stderr_thread.join()
+        stdout_thread.join()
+        stderr_thread.join()
             
-            if ret_code <> 0:
-                raise Exception(stderr_thread.message)
+        if ret_code <> 0:
+            raise Exception(stderr_thread.message)
                 
-            if len(stdout_thread.errList) > 0:
-                raise Exception(stdout_thread.errList[0])
+        if len(stdout_thread.errList) > 0:
+            raise Exception(stdout_thread.errList[0])
             
-            for nodeTable in stdout_thread.container:
-                if nodeTable['up']:
-                    ncpu += nodeTable['ncpu']
-                    njob += nodeTable['njob']
+        for nodeTable in stdout_thread.container:
+            if nodeTable['up']:
+                ncpu += nodeTable['ncpu']
+                njob += nodeTable['njob']
             
-        return (ncpu, max(ncpu - njob, 0))
-
-    except:
-        etype, evalue, etraceback = sys.exc_info()
-        raise Exception("%s: (%s)" % (etype, evalue))
+    return (ncpu, max(ncpu - njob, 0))
 
 
 if __name__ == "__main__":
