@@ -161,21 +161,22 @@ class PBSJobHandler(Thread):
             
             line = self.stream.readline()
 
-        if not 'user' in currTable:
-            self.errList.append("Cannot find user for " + currTable['jobid'])
-        if not 'group' in currTable:
-            self.errList.append("Cannot find user for " + currTable['jobid'])
-        if 'walltime' in currTable:
-            if not 'start' in currTable:
-                currTable['start'] = now - currTable['walltime']
-                currTable['startAnchor'] = 'resources_used.walltime'
-        else:
-            if 'start' in currTable:
-                currTable['walltime'] = now - currTable['start']
+        if currTable <> None:
+            if not 'user' in currTable:
+                self.errList.append("Cannot find user for " + currTable['jobid'])
+            if not 'group' in currTable:
+                self.errList.append("Cannot find user for " + currTable['jobid'])
+            if 'walltime' in currTable:
+                if not 'start' in currTable:
+                    currTable['start'] = now - currTable['walltime']
+                    currTable['startAnchor'] = 'resources_used.walltime'
+            else:
+                if 'start' in currTable:
+                    currTable['walltime'] = now - currTable['start']
         
-        self.container.append(currTable)
+            self.container.append(currTable)
 
-        # end of thread
+    # end of thread
 
 
 
