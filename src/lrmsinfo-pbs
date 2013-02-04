@@ -48,7 +48,8 @@ def main():
         ncpu, freecpu = PBSNodesHandler.parse()
         sys.stdout.write("nactive      %d\n" % ncpu)
         sys.stdout.write("nfree        %d\n" % freecpu)
-        sys.stdout.write("now          %d\n" % int(time.time()))
+        # timestamp refers to UTC
+        sys.stdout.write("now          %d\n" % int(time.time()) + time.timezone)
         #
         # TODO verify schedCycle
         #
