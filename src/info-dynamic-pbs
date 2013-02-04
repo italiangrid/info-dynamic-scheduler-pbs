@@ -425,6 +425,9 @@ def main():
             if qInfo.maxRunJobs <> -1:
                 out.write('GlueCEPolicyMaxRunningJobs: %d\n' % qInfo.maxRunJobs)
                 
+            if qInfo.maxTotJobs <> -1 and qInfo.maxRunJobs <> -1:
+                out.write('GlueCEPolicyMaxWaitingJobs: %d\n' % (qInfo.maxTotJobs - qInfo.maxRunJobs))
+                
             if qInfo.maxWallTime <> -1:
                 out.write('GlueCEPolicyMaxWallClockTime: %d\n' % (qInfo.maxWallTime / 60))
                 
