@@ -49,7 +49,7 @@ def main():
         sys.stdout.write("nactive      %d\n" % ncpu)
         sys.stdout.write("nfree        %d\n" % freecpu)
         # timestamp refers to UTC
-        sys.stdout.write("now          %d\n" % int(time.time()) + time.timezone)
+        sys.stdout.write("now          %d\n" % int(time.time() + time.timezone))
         #
         # TODO verify schedCycle
         #
