@@ -329,8 +329,8 @@ def main():
         sys.exit(1)
 
 
-    glue1QueueTable = None
-    glue2QueueTable = None
+    glue1QueueTable = dict()
+    glue2QueueTable = dict()
     managerTable = None
     
     if config['outputformat'] <> "glue2":
