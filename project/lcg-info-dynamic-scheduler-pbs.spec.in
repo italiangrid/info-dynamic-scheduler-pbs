@@ -38,9 +38,6 @@ python setup.py install -O1 --prefix %{buildroot}/usr --install-data %{buildroot
 %clean
 rm -rf %{buildroot}
 
-%clean
-rm -rf %{buildroot}
-
 %files
 %defattr(-,root,root)
 %dir /usr/share/lcg-info-dynamic-scheduler-pbs/templates
