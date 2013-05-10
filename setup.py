@@ -9,7 +9,7 @@ pkg_name = 'lcg-info-dynamic-scheduler-pbs'
 pkg_version = '2.4.2'
 pkg_release = '1'
 
-source_items = "setup.py src tests"
+source_items = "config setup.py src"
 
 class bdist_rpm(_bdist_rpm):
 
