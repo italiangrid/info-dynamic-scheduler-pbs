@@ -7,8 +7,8 @@ Vendor: EMI
 URL: http://glite.cern.ch/
 Group: Applications/Internet
 BuildArch: noarch
-Obsoletes: lrms-python-generic, info-dynamic-pbs
-Provides: info-dynamic-pbs
+Obsoletes: info-dynamic-pbs <= 3.0.1
+Provides: info-dynamic-pbs = 3.0.2
 Requires: maui-client
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 AutoReqProv: yes
