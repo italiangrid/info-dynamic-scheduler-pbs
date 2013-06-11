@@ -465,6 +465,12 @@ def main():
                 out.write('GLUE2ComputingShareMaxWallTime: %d\n' % qInfo.obtWallTime)
             if qInfo.maxProcCount <> -1:
                 out.write('GLUE2ComputingShareMaxSlotsPerJob: %d\n' % qInfo.maxProcCount)
+            if qInfo.maxRunJobs <> -1:
+                out.write('GLUE2ComputingShareMaxRunningJobs: %d\n' % qInfo.maxRunJobs)
+            if qInfo.maxTotJobs <> -1:
+                out.write('GLUE2ComputingShareMaxTotalJobs: %d\n' % qInfo.maxTotJobs)
+            if qInfo.maxTotJobs <> -1 and qInfo.maxRunJobs <> -1:
+                out.write('GLUE2ComputingShareMaxWaitingJobs: %d\n' % (qInfo.maxTotJobs - qInfo.maxRunJobs))
                 
             out.write('GLUE2ComputingShareServingState: %s\n' % qInfo.state.lower())
             out.write('GLUE2EntityCreationTime: %s\n' % now)
