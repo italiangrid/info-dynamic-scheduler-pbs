@@ -103,6 +103,7 @@ class QueueInfoHandler(Thread):
         Thread.__init__(self)
         self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
         self.cputRegex = re.compile('(\d+):(\d+):(\d+)')
+        self.memRegex = re.compile('(\d+)([tgmkbw]+)')
         self.maxCPUtime = -1
         self.defaultCPUtime = -1
         self.maxPCPUtime = -1
@@ -115,6 +116,10 @@ class QueueInfoHandler(Thread):
         self.obtWallTime = -1
         self.maxProcCount = -1
         self.defaultProcCount = -1
+        self.defaultMem = -1
+        self.defaultVMem = -1
+        self.maxMem = -1
+        self.maxVMem = -1
         self.enabled = False
         self.started = False
         self.state = 'Closed'
@@ -128,6 +133,22 @@ class QueueInfoHandler(Thread):
             return int(parsed.group(1)) * 3600 + int(parsed.group(2)) * 60 + int(parsed.group(3))
         if strtime.strip() <> '-':
             return int(strtime.strip())
+        return 0
+        
+    def convMem(self, msize):
+        parsed = self.memRegex.match(msize.strip())
+        if parsed:
+            suffix = parsed.group(2)
+            if suffix == 'b' or suffix == 'w':
+                return int(parsed.group(1)) / 1048576
+            if suffix == 'kb' or suffix == 'kw':
+                return int(parsed.group(1)) / 1024
+            if suffix == 'mb' or suffix == 'mw':
+                return int(parsed.group(1))
+            if suffix == 'gb' or suffix == 'gw':
+                return int(parsed.group(1)) * 1024
+            if suffix == 'tb' or suffix == 'tw':
+                return int(parsed.group(1)) * 1048576
         return 0
 
     def run(self):
@@ -179,6 +200,22 @@ class QueueInfoHandler(Thread):
                 
                     self.defaultProcCount = int(parsed.group(2).strip())
                     
+                elif parsed.group(1) == 'resources_default.mem':
+                
+                    self.defaultMem = self.convMem(parsed.group(2))
+                    
+                elif parsed.group(1) == 'resources_default.vmem':
+                
+                    self.defaultVMem = self.convMem(parsed.group(2))
+                    
+                elif parsed.group(1) == 'resources_max.mem':
+                
+                    self.maxMem = self.convMem(parsed.group(2))
+                    
+                elif parsed.group(1) == 'resources_max.vmem':
+                
+                    self.maxVMem = self.convMem(parsed.group(2))
+                    
                 elif parsed.group(1) == 'enabled' and parsed.group(2).strip() == 'True':
                     
                     self.enabled = True
@@ -221,6 +258,12 @@ class QueueInfoHandler(Thread):
 
         if self.maxProcCount == -1 and self.defaultProcCount <> -1:
             self.maxProcCount = self.defaultProcCount
+            
+        if self.maxMem == -1 and self.defaultMem <> -1:
+            self.maxMem = self.defaultMem
+
+        if self.maxVMem == -1 and self.defaultVMem <> -1:
+            self.maxVMem = self.defaultVMem
 
 
 def runCommand(cmdline, stdout_thread):
@@ -436,7 +479,7 @@ def main():
                 
             if qInfo.maxProcCount <> -1:
                 out.write('GlueCEPolicyMaxSlotsPerJob: %d\n' % qInfo.maxProcCount)
-                
+ 
             out.write('GlueCEStateStatus: %s\n' % qInfo.state)
             out.write('\n')
 
@@ -471,6 +514,10 @@ def main():
                 out.write('GLUE2ComputingShareMaxTotalJobs: %d\n' % qInfo.maxTotJobs)
             if qInfo.maxTotJobs <> -1 and qInfo.maxRunJobs <> -1:
                 out.write('GLUE2ComputingShareMaxWaitingJobs: %d\n' % (qInfo.maxTotJobs - qInfo.maxRunJobs))
+            if qInfo.maxMem <> -1:
+                out.write('GLUE2ComputingShareMaxMainMemory: %d\n' % qInfo.maxMem)
+            if qInfo.maxVMem <> -1:
+                out.write('GLUE2ComputingShareMaxVirtualMemory: %d\n' % qInfo.maxVMem)
                 
             out.write('GLUE2ComputingShareServingState: %s\n' % qInfo.state.lower())
             out.write('GLUE2EntityCreationTime: %s\n' % now)
