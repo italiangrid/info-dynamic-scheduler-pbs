@@ -18,34 +18,23 @@ import sys
 import re
 import time
 import shlex
-import subprocess
 from threading import Thread
 import pwd
 import grp
 
-class ErrorHandler(Thread):
-
-    def __init__(self, err_stream):
-        Thread.__init__(self)
-        self.stream = err_stream
-        self.message = ""
-    
-    def run(self):
-        line = self.stream.readline()
-        while line:
-            self.message = self.message + line
-            line = self.stream.readline()
+from TorqueInfoUtils import CommonUtils
 
 class PBSJobHandler(Thread):
 
-    def __init__(self, stream, container):
+    def __init__(self, container):
         Thread.__init__(self)
-        self.stream = stream
         self.container = container
         self.errList = list()
         self.jRegex = re.compile('^\s*Job Id:([^$]+)$')
         self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
 
+    def setStream(self, stream):
+        self.stream = stream
 
     def _convertState(self, state):
         if state == 'Q' or state == 'W':
@@ -182,39 +171,12 @@ class PBSJobHandler(Thread):
 
 def parse(resultContainer, filename=None):
 
-    try:
-        if filename:
-            cmd = shlex.split('cat ' + filename)
-        else:
-            cmd = shlex.split('qstat -f')
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
-        stdout_thread = PBSJobHandler(process.stdout, resultContainer)
-        stderr_thread = ErrorHandler(process.stderr)
-    
-        stdout_thread.start()
-        stderr_thread.start()
-    
-        ret_code = process.wait()
-    
-        stdout_thread.join()
-        stderr_thread.join()
+    if filename:
+        cmd = shlex.split('cat ' + filename)
+    else:
+        cmd = shlex.split('qstat -f')
         
-        if ret_code <> 0:
-            raise Exception(stderr_thread.message)
-            
-        if len(stdout_thread.errList) > 0:
-            raise Exception(stdout_thread.errList[0])
+    container = PBSJobHandler(resultContainer)
+    CommonUtils.parseStream(cmd, container)
 
-    except:
-        etype, evalue, etraceback = sys.exc_info()
-        raise Exception("%s: (%s)" % (etype, evalue))
-        
-
-if __name__ == "__main__":
-    
-    result = list()
-    parse(result, sys.argv[1])
-    for tmpt in result:
-        print tmpt
 

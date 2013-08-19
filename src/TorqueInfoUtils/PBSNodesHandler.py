@@ -21,32 +21,19 @@ import shlex
 import subprocess
 from threading import Thread
 
-
-class ErrorHandler(Thread):
-
-    def __init__(self, err_stream):
-        Thread.__init__(self)
-        self.stream = err_stream
-        self.message = ""
-    
-    def run(self):
-        line = self.stream.readline()
-        while line:
-            self.message = self.message + line
-            line = self.stream.readline()
-
-
+from TorqueInfoUtils import CommonUtils
 
 class PBSNodesHandler(Thread):
 
-    def __init__(self, stream):
+    def __init__(self):
         Thread.__init__(self)
-        self.stream = stream
         self.errList = list()
-        self.container = list()
+        self.nodeTables = list()
         self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
         
-        
+    def setStream(self, stream):
+        self.stream = stream
+
     def run(self):
         line = self.stream.readline()
         currTable = None
@@ -81,7 +68,7 @@ class PBSNodesHandler(Thread):
                 if len(nodeName) > 0:
                     
                     if currTable <> None:                            
-                        self.container.append(currTable)
+                        self.nodeTables.append(currTable)
                         
                     currTable = dict()
                     currTable['name'] = nodeName
@@ -92,11 +79,11 @@ class PBSNodesHandler(Thread):
             line = self.stream.readline()
 
         if currTable <> None:                            
-            self.container.append(currTable)
+            self.nodeTables.append(currTable)
         
     #end of thread
 
-def parse(nodeList=[""], filename=None):
+def parseForNodelist(nodeList=[""], filename=None):
 
     ncpu = 0
     njob = 0
@@ -106,35 +93,34 @@ def parse(nodeList=[""], filename=None):
             cmd = shlex.split('cat ' + filename)
         else:
             cmd = shlex.split('pbsnodes -a ' + nodeId)
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
-        stdout_thread = PBSNodesHandler(process.stdout)
-        stderr_thread = ErrorHandler(process.stderr)
-        
-        stdout_thread.start()
-        stderr_thread.start()
-        
-        ret_code = process.wait()
-        
-        stdout_thread.join()
-        stderr_thread.join()
-            
-        if ret_code <> 0:
-            raise Exception(stderr_thread.message)
-                
-        if len(stdout_thread.errList) > 0:
-            raise Exception(stdout_thread.errList[0])
-            
-        for nodeTable in stdout_thread.container:
+        container = PBSNodesHandler()
+        CommonUtils.parseStream(cmd, container)
+                    
+        for nodeTable in container.nodeTables:
             if nodeTable['up']:
                 ncpu += nodeTable['ncpu']
                 njob += nodeTable['njob']
             
     return (ncpu, max(ncpu - njob, 0))
 
+def parse(filename=None):
 
-if __name__ == "__main__":
+    ncpu = 0
+    njob = 0
     
-    print parse([''], sys.argv[1])
+    if filename:
+        cmd = shlex.split('cat ' + filename)
+    else:
+        cmd = shlex.split('pbsnodes -a')
     
-    
+    container = PBSNodesHandler()
+    CommonUtils.parseStream(cmd, container)
+                    
+    for nodeTable in container.nodeTables:
+        if nodeTable['up']:
+            ncpu += nodeTable['ncpu']
+            njob += nodeTable['njob']
+            
+    return (ncpu, max(ncpu - njob, 0))
+

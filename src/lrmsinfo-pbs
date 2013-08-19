@@ -45,7 +45,7 @@ def main():
             if optName in ("-i", "--input"):
                 infile = optValue
         
-        ncpu, freecpu = PBSNodesHandler.parse()
+        ncpu, freecpu = PBSNodesHandler.parse(infile)
         sys.stdout.write("nactive      %d\n" % ncpu)
         sys.stdout.write("nfree        %d\n" % freecpu)
         # timestamp refers to UTC
