@@ -24,308 +24,20 @@ import subprocess
 from threading import Thread
 
 from TorqueInfoUtils import CommonUtils
-
-class LRMSVersionHandler(Thread):
-
-    def __init__(self):
-        Thread.__init__(self)
-        self.version = None
-        self.pRegex = re.compile('^\s*pbs_version\s*=([^$]+)$')
-    
-    def setStream(self, stream):
-        self.stream = stream
-      
-    def run(self):
-        line = self.stream.readline()
-        while line:
-            parsed = self.pRegex.match(line)
-            if parsed:
-                self.version = parsed.group(1).strip()
-            line = self.stream.readline()
-
-
-class CPUInfoHandler(Thread):
-
-    def __init__(self):
-        Thread.__init__(self)
-        self.totalCPU = 0
-        self.freeCPU = 0
-        self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
-    
-    def setStream(self, stream):
-        self.stream = stream
-      
-    def run(self):
-        currState = None
-        line = self.stream.readline()
-        while line:
-            parsed = self.pRegex.match(line)
-            if parsed:
-                if parsed.group(1) == 'state':
-                
-                    currState = parsed.group(2).strip()
-                
-                elif parsed.group(1) == 'np':
-                
-                    procNum = int(parsed.group(2).strip())
-                    if currState <> 'down' and currState <> 'offline':
-                        self.totalCPU += procNum
-                    if currState == 'free':
-                        self.freeCPU += procNum
-                
-                elif parsed.group(1) == 'jobs':
-                    
-                    jobs = parsed.group(2).strip().split(', ')
-                    if currState == 'free':
-                        self.freeCPU -= len(jobs)
-                
-            line = self.stream.readline()
-
-
-class QueueInfoHandler(Thread):
-
-    def __init__(self):
-        Thread.__init__(self)
-        self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
-        self.cputRegex = re.compile('(\d+):(\d+):(\d+)')
-        self.memRegex = re.compile('(\d+)([tgmkbw]+)')
-        self.maxCPUtime = -1
-        self.defaultCPUtime = -1
-        self.maxPCPUtime = -1
-        self.defaultPCPUtime = -1
-        self.maxTotJobs = -1
-        self.maxRunJobs = -1
-        self.policyPriority = None
-        self.maxWallTime = -1
-        self.defaultWallTime = -1
-        self.obtWallTime = -1
-        self.maxProcCount = -1
-        self.defaultProcCount = -1
-        self.defaultMem = -1
-        self.defaultVMem = -1
-        self.maxMem = -1
-        self.maxVMem = -1
-        self.enabled = False
-        self.started = False
-        self.state = 'Closed'
-        
-    def setStream(self, stream):
-        self.stream = stream
-        
-    def conv(self, strtime):
-        parsed = self.cputRegex.match(strtime.strip())
-        if parsed:
-            return int(parsed.group(1)) * 3600 + int(parsed.group(2)) * 60 + int(parsed.group(3))
-        if strtime.strip() <> '-':
-            return int(strtime.strip())
-        return 0
-        
-    def convMem(self, msize):
-        parsed = self.memRegex.match(msize.strip())
-        if parsed:
-            suffix = parsed.group(2)
-            if suffix == 'b' or suffix == 'w':
-                return int(parsed.group(1)) / 1048576
-            if suffix == 'kb' or suffix == 'kw':
-                return int(parsed.group(1)) / 1024
-            if suffix == 'mb' or suffix == 'mw':
-                return int(parsed.group(1))
-            if suffix == 'gb' or suffix == 'gw':
-                return int(parsed.group(1)) * 1024
-            if suffix == 'tb' or suffix == 'tw':
-                return int(parsed.group(1)) * 1048576
-        return 0
-
-    def run(self):
-        line = self.stream.readline()
-        while line:
-            parsed = self.pRegex.match(line)
-            if parsed:
-                if parsed.group(1) == 'resources_max.cput':
-                
-                    self.maxCPUtime = self.conv(parsed.group(2))
-                    
-                elif parsed.group(1) == 'resources_default.cput':
-                
-                    self.defaultCPUtime = self.conv(parsed.group(2))
-                    
-                elif parsed.group(1) == 'resources_max.pcput':
-                
-                    self.maxPCPUtime = self.conv(parsed.group(2))
-                    
-                elif parsed.group(1) == 'resources_default.pcput':
-                
-                    self.defaultPCPUtime = self.conv(parsed.group(2))
-                    
-                elif parsed.group(1) == 'max_queuable':
-                
-                    self.maxTotJobs = int(parsed.group(2).strip())
-                    
-                elif parsed.group(1) == 'Priority':
-                    
-                    self.policyPriority = parsed.group(2).strip()
-                    
-                elif parsed.group(1) == 'max_running':
-                
-                    self.maxRunJobs = int(parsed.group(2).strip())
-                    
-                elif parsed.group(1) == 'resources_max.walltime':
-                
-                    self.maxWallTime = self.conv(parsed.group(2))
-                    
-                elif parsed.group(1) == 'resources_default.walltime':
-                
-                    self.defaultWallTime = self.conv(parsed.group(2))
-                    
-                elif parsed.group(1) == 'resources_max.procct':
-                
-                    self.maxProcCount = int(parsed.group(2).strip())
-                    
-                elif parsed.group(1) == 'resources_default.procct':
-                
-                    self.defaultProcCount = int(parsed.group(2).strip())
-                    
-                elif parsed.group(1) == 'resources_default.mem':
-                
-                    self.defaultMem = self.convMem(parsed.group(2))
-                    
-                elif parsed.group(1) == 'resources_default.vmem':
-                
-                    self.defaultVMem = self.convMem(parsed.group(2))
-                    
-                elif parsed.group(1) == 'resources_max.mem':
-                
-                    self.maxMem = self.convMem(parsed.group(2))
-                    
-                elif parsed.group(1) == 'resources_max.vmem':
-                
-                    self.maxVMem = self.convMem(parsed.group(2))
-                    
-                elif parsed.group(1) == 'enabled' and parsed.group(2).strip() == 'True':
-                    
-                    self.enabled = True
-                    
-                elif parsed.group(1) == 'started' and parsed.group(2).strip() == 'True':
-                
-                    self.started = True
-
-
-
-            line = self.stream.readline()
-
-        if self.enabled:
-            if self.started:
-                self.state = 'Production'
-            else:
-                self.state = 'Queueing'
-        else:
-            if self.started:
-                self.state = 'Draining'
-            
-        if self.defaultCPUtime <> -1 and self.defaultPCPUtime <> -1:
-            self.defaultCPUtime = min(self.defaultCPUtime, self.defaultPCPUtime)
-        if self.defaultPCPUtime <> -1:
-            self.defaultCPUtime = self.defaultPCPUtime
-            
-        if self.maxCPUtime <> -1 and self.maxPCPUtime <> -1:
-            self.maxCPUtime = min(self.maxCPUtime, self.maxPCPUtime)
-        if self.maxPCPUtime <> -1:
-            self.maxCPUtime = self.maxPCPUtime
-
-        if self.maxCPUtime == -1 and self.defaultCPUtime <> -1:
-            self.maxCPUtime = self.defaultCPUtime
-        
-        if self.maxWallTime <> -1:
-            self.obtWallTime = self.maxWallTime
-                
-        if self.maxWallTime == -1 and self.defaultWallTime <> -1:
-            self.maxWallTime = self.defaultWallTime
-
-        if self.maxProcCount == -1 and self.defaultProcCount <> -1:
-            self.maxProcCount = self.defaultProcCount
-            
-        if self.maxMem == -1 and self.defaultMem <> -1:
-            self.maxMem = self.defaultMem
-
-        if self.maxVMem == -1 and self.defaultVMem <> -1:
-            self.maxVMem = self.defaultVMem
-
-
-def runCommand(cmdline, stdout_thread):
-
-    try:
-        cmd = shlex.split(cmdline)
-        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
-        stdout_thread.setStream(process.stdout)
-        stderr_thread = CommonUtils.ErrorHandler(process.stderr)
-    
-        stdout_thread.start()
-        stderr_thread.start()
-    
-        ret_code = process.wait()
-    
-        stdout_thread.join()
-        stderr_thread.join()
-    
-        return (ret_code, stderr_thread.message)   
-
-    except:
-        etype, evalue, etraceback = sys.exc_info()
-        return (-125, "%s: (%s)" % (etype, evalue))
-
-
-
-def readDNsAndAttr(filename, dnRE, queueRE):
-    dnsAndQueues = dict()
-    ldifFile = None
-    try:
-    
-        ldifFile = open(filename)
-        
-        for line in ldifFile.readlines():
-            
-            tmpm = dnRE.match(line)
-            if tmpm <> None:
-                currDN = line.strip()
-                continue
-                
-            tmpm = queueRE.match(line)
-            if tmpm <> None:
-                dnsAndQueues[currDN] = tmpm.group(1).strip()
-        
-    finally:
-        if ldifFile:
-            ldifFile.close()
-
-    return dnsAndQueues
-
-
+from TorqueInfoUtils import QStatHandler
+from TorqueInfoUtils import PBSNodesHandler
 
 
 def main():
-    pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
-    
-    config = {}
     
     hostname = socket.getfqdn()
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
-    conffile = None
-    foundErr = False
     try:
         if len(sys.argv) <> 2:
             raise Exception("Usage: info-dynamic-pbs <config-file>")
-
-        conffile = open(sys.argv[1])
-        for line in conffile:
-            parsed = pRegex.match(line)
-            if parsed:
-                config[parsed.group(1)] = parsed.group(2).strip(' \n\t"')
-            else:
-                tmps = line.strip()
-                if len(tmps) > 0 and not tmps.startswith('#'):
-                    raise Exception("Error parsing configuration file " + sys.argv[1])
+            
+        config = CommonUtils.readConfigFile(sys.argv[1])
 
         if not "outputformat" in config:
             if "GlueFormat" in config:
@@ -346,82 +58,49 @@ def main():
             
         if not "pbs-host" in config:
             config["pbs-host"] = hostname
+            
+        if not "input-data-file" in config:
+            config["input-data-file"] = None
 
     except Exception, ex:
         sys.stderr.write(str(ex) + '\n')
-        foundErr = True
-
-    if conffile:
-        conffile.close()
-    if foundErr:
         sys.exit(1)
 
 
     glue1QueueTable = dict()
     glue2QueueTable = dict()
     managerTable = None
-    
-    if config['outputformat'] <> "glue2":
-        
-        glue1DNRegex = re.compile("dn:\s*GlueCEUniqueID\s*=\s*[^$]+")
-        glue1QueueRegex = re.compile("GlueCEName\s*:\s*([^$]+)")
-
-        try:
-
-            glue1QueueTable = readDNsAndAttr(config["glue1-static-file-CE"], glue1DNRegex, glue1QueueRegex)
-        
-        except Exception, ex:
-            sys.stderr.write(str(ex) + '\n')
-            sys.exit(1)
-
-
-
-
-    if config['outputformat'] <> "glue1":
-    
-        glue2DNRegex = re.compile("dn:\s*GLUE2ShareID\s*=\s*[^$]+")
-        glue2QueueRegex = re.compile("GLUE2ComputingShareMappingQueue\s*:\s*([^$]+)")
-
-        managerRegex = re.compile("dn:\s*GLUE2ManagerId\s*=\s*[^$]+")
-        manAttrRegex = re.compile("GLUE2ManagerID\s*:\s*([^$]+)")
-        
-        try:
-
-            glue2QueueTable = readDNsAndAttr(config["glue2-static-file-computing-share"], glue2DNRegex, glue2QueueRegex)
-            managerTable = readDNsAndAttr(config["glue2-static-file-computing-manager"], managerRegex, manAttrRegex)
-            
-        except Exception, ex:
-            sys.stderr.write(str(ex) + '\n')
-            sys.exit(1)
-
-    verHandler = LRMSVersionHandler()
-    exitCode, errMsg = runCommand("qstat -B -f %s" % config["pbs-host"], verHandler)
-    if exitCode <> 0:
-        sys.stderr.write(errMsg + '\n')
-        sys.exit(1)
-        
-    cpuInfoHandler = CPUInfoHandler()
-    exitCode, errMsg = runCommand("pbsnodes -a -s %s" % config["pbs-host"], cpuInfoHandler)
-    if exitCode <> 0:
-        sys.stderr.write(errMsg + '\n')
-        sys.exit(1)
-    
-
     allQueues = set()
-    for queue in glue1QueueTable.values():
-        allQueues.add(queue)
-    for queue in glue2QueueTable.values():
-        allQueues.add(queue)
-    
-    
     qInfoHandlers = dict()
-    for queue in allQueues:
+    
+    try:
+    
+        if config['outputformat'] <> "glue2":
         
-        qInfoHandlers[queue] = QueueInfoHandler()
-        exitCode, errMsg = runCommand("qstat -Q -f %s\@%s" % (queue, config["pbs-host"]), qInfoHandlers[queue])
-        if exitCode <> 0:
-            sys.stderr.write(errMsg + '\n')
-            sys.exit(1)
+            glue1QueueTable = CommonUtils.parseGLUE1Queues(config["glue1-static-file-CE"])
+
+            for queue in glue1QueueTable.values():
+                allQueues.add(queue)
+
+        if config['outputformat'] <> "glue1":
+
+            glue2QueueTable = CommonUtils.parseGLUE2Shares(config["glue2-static-file-computing-share"])
+            managerTable = CommonUtils.parseGLUE2Managers(config["glue2-static-file-computing-manager"])
+            
+            for queue in glue2QueueTable.values():
+                allQueues.add(queue)
+
+    
+        lrmsVer = QStatHandler.parseLRMSVersion(config["pbs-host"], config["input-data-file"])
+        
+        cpuInfoHandler = PBSNodesHandler.parseCPUInfo(config["pbs-host"], config["input-data-file"])
+    
+        for queue in allQueues:
+            qInfoHandlers[queue] = QStatHandler.parseQueueInfo(config["pbs-host"], queue, config["input-data-file"])
+            
+    except Exception, ex:
+        sys.stderr.write(str(ex) + '\n')
+        sys.exit(2)
 
     out = sys.stdout
     
@@ -433,8 +112,7 @@ def main():
             qInfo = qInfoHandlers[queue]
             
             out.write(glue1DN + '\n')
-            if verHandler.version:
-                out.write('GlueCEInfoLRMSVersion: %s\n' % verHandler.version)
+            out.write('GlueCEInfoLRMSVersion: %s\n' % lrmsVer)
             
             out.write('GlueCEInfoTotalCPUs: %d\n' % cpuInfoHandler.totalCPU)
             out.write('GlueCEPolicyAssignedJobSlots: %d\n' % cpuInfoHandler.totalCPU)
@@ -474,8 +152,7 @@ def main():
         for managerDN in managerTable:
         
             out.write(managerDN + '\n')
-            if verHandler.version:
-                out.write('GLUE2ManagerProductVersion: %s\n' % verHandler.version)
+            out.write('GLUE2ManagerProductVersion: %s\n' % lrmsVer)
             out.write('GLUE2EntityCreationTime: %s\n' % now)
             out.write('\n')
             

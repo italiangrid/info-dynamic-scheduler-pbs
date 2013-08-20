@@ -124,3 +124,62 @@ def parse(filename=None):
             
     return (ncpu, max(ncpu - njob, 0))
 
+
+
+
+
+class CPUInfoHandler(Thread):
+
+    def __init__(self):
+        Thread.__init__(self)
+        self.errList = list()
+        self.totalCPU = 0
+        self.freeCPU = 0
+        self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
+    
+    def setStream(self, stream):
+        self.stream = stream
+      
+    def run(self):
+        currState = None
+        line = self.stream.readline()
+        while line:
+            parsed = self.pRegex.match(line)
+            if parsed:
+                if parsed.group(1) == 'state':
+                
+                    currState = parsed.group(2).strip()
+                
+                elif parsed.group(1) == 'np':
+                
+                    procNum = int(parsed.group(2).strip())
+                    if currState <> 'down' and currState <> 'offline':
+                        self.totalCPU += procNum
+                    if currState == 'free':
+                        self.freeCPU += procNum
+                
+                elif parsed.group(1) == 'jobs':
+                    
+                    jobs = parsed.group(2).strip().split(', ')
+                    if currState == 'free':
+                        self.freeCPU -= len(jobs)
+                
+            line = self.stream.readline()
+
+
+def parseCPUInfo(pbsHost, filename=None):
+
+    if filename:
+        cmd = shlex.split('cat ' + filename)
+    else:
+        cmd = shlex.split('pbsnodes -a -s %s' % pbsHost)
+
+    container = CPUInfoHandler()
+    CommonUtils.parseStream(cmd, container)
+    return container
+    
+
+
+
+
+

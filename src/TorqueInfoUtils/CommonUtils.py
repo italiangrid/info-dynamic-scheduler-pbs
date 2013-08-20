@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import sys
+import re
 import subprocess
 from threading import Thread
 
@@ -56,4 +57,78 @@ def parseStream(cmd, container):
     except:
         etype, evalue, etraceback = sys.exc_info()
         raise Exception("%s: (%s)" % (etype, evalue))
+
+
+
+def readDNsAndAttr(filename, dnRE, attrRE):
+    result = dict()
+    ldifFile = None
+    try:
+    
+        ldifFile = open(filename)
+        
+        for line in ldifFile.readlines():
+            
+            tmpm = dnRE.match(line)
+            if tmpm <> None:
+                currDN = line.strip()
+                continue
+                
+            tmpm = attrRE.match(line)
+            if tmpm <> None:
+                result[currDN] = tmpm.group(1).strip()
+        
+    finally:
+        if ldifFile:
+            ldifFile.close()
+
+    return result
+
+def parseGLUE1Queues(filename):
+
+    glue1DNRegex = re.compile("dn:\s*GlueCEUniqueID\s*=\s*[^$]+")
+    glue1QueueRegex = re.compile("GlueCEName\s*:\s*([^$]+)")
+
+    return readDNsAndAttr(filename, glue1DNRegex, glue1QueueRegex)
+
+
+def parseGLUE2Shares(filename):
+
+    glue2DNRegex = re.compile("dn:\s*GLUE2ShareID\s*=\s*[^$]+")
+    glue2ShareRegex = re.compile("GLUE2ComputingShareMappingQueue\s*:\s*([^$]+)")
+    
+    return readDNsAndAttr(filename, glue2DNRegex, glue2ShareRegex)
+
+
+def parseGLUE2Managers(filename):
+
+    managerRegex = re.compile("dn:\s*GLUE2ManagerId\s*=\s*[^$]+")
+    manAttrRegex = re.compile("GLUE2ManagerID\s*:\s*([^$]+)")
+    
+    return readDNsAndAttr(filename, managerRegex, manAttrRegex)
+
+
+def readConfigFile(configFile):
+
+    pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
+    conffile = None
+    config = dict()
+    
+    try:
+    
+        conffile = open(configFile)
+        for line in conffile:
+            parsed = pRegex.match(line)
+            if parsed:
+                config[parsed.group(1)] = parsed.group(2).strip(' \n\t"')
+            else:
+                tmps = line.strip()
+                if len(tmps) > 0 and not tmps.startswith('#'):
+                    raise Exception("Error parsing configuration file " + configFile)
+
+    finally:
+        if conffile:
+            conffile.close()
+
+    return config
 
