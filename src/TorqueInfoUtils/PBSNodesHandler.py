@@ -153,7 +153,7 @@ class CPUInfoHandler(Thread):
                 elif parsed.group(1) == 'np':
                 
                     procNum = int(parsed.group(2).strip())
-                    if currState <> 'down' and currState <> 'offline':
+                    if not ('down' in currState or 'offline' in currState or 'unknown' in currState):
                         self.totalCPU += procNum
                     if currState == 'free':
                         self.freeCPU += procNum
