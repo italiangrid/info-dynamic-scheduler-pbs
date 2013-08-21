@@ -23,109 +23,6 @@ from threading import Thread
 
 from TorqueInfoUtils import CommonUtils
 
-class PBSNodesHandler(Thread):
-
-    def __init__(self):
-        Thread.__init__(self)
-        self.errList = list()
-        self.nodeTables = list()
-        self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
-        
-    def setStream(self, stream):
-        self.stream = stream
-
-    def run(self):
-        line = self.stream.readline()
-        currTable = None
-        
-        while line:
-            parsed = self.pRegex.match(line)
-            if parsed and currTable <> None:
-            
-                key = parsed.group(1)
-                value = parsed.group(2).strip()
-                
-                if key == 'state':
-                
-                    currTable['state'] = value
-                    currTable['up'] = value <> 'down' and value <> 'offline'
-                
-                elif key == 'np':
-                    
-                    try:
-                        currTable['ncpu'] = int(value)
-                    except:
-                        currTable['ncpu'] = 0
-                
-                elif key == 'jobs':
-                
-                    if len(value) > 0:
-                        currTable['njob'] = value.count(',') + 1
-                                        
-            else:
-            
-                nodeName = line.strip()
-                if len(nodeName) > 0:
-                    
-                    if currTable <> None:                            
-                        self.nodeTables.append(currTable)
-                        
-                    currTable = dict()
-                    currTable['name'] = nodeName
-                    currTable['up'] = False
-                    currTable['njob'] = 0
-                    currTable['ncpu'] = 0
-            
-            line = self.stream.readline()
-
-        if currTable <> None:                            
-            self.nodeTables.append(currTable)
-        
-    #end of thread
-
-def parseForNodelist(nodeList=[""], filename=None):
-
-    ncpu = 0
-    njob = 0
-    
-    for nodeId in nodeList:
-        if filename:
-            cmd = shlex.split('cat ' + filename)
-        else:
-            cmd = shlex.split('pbsnodes -a ' + nodeId)
-        
-        container = PBSNodesHandler()
-        CommonUtils.parseStream(cmd, container)
-                    
-        for nodeTable in container.nodeTables:
-            if nodeTable['up']:
-                ncpu += nodeTable['ncpu']
-                njob += nodeTable['njob']
-            
-    return (ncpu, max(ncpu - njob, 0))
-
-def parse(filename=None):
-
-    ncpu = 0
-    njob = 0
-    
-    if filename:
-        cmd = shlex.split('cat ' + filename)
-    else:
-        cmd = shlex.split('pbsnodes -a')
-    
-    container = PBSNodesHandler()
-    CommonUtils.parseStream(cmd, container)
-                    
-    for nodeTable in container.nodeTables:
-        if nodeTable['up']:
-            ncpu += nodeTable['ncpu']
-            njob += nodeTable['njob']
-            
-    return (ncpu, max(ncpu - njob, 0))
-
-
-
 
 
 class CPUInfoHandler(Thread):
@@ -141,38 +38,49 @@ class CPUInfoHandler(Thread):
         self.stream = stream
       
     def run(self):
+    
         currState = None
-        line = self.stream.readline()
-        while line:
-            parsed = self.pRegex.match(line)
-            if parsed:
-                if parsed.group(1) == 'state':
-                
-                    currState = parsed.group(2).strip()
-                
-                elif parsed.group(1) == 'np':
-                
-                    procNum = int(parsed.group(2).strip())
-                    if not ('down' in currState or 'offline' in currState or 'unknown' in currState):
-                        self.totalCPU += procNum
-                    if currState == 'free':
-                        self.freeCPU += procNum
-                
-                elif parsed.group(1) == 'jobs':
-                    
-                    jobs = parsed.group(2).strip().split(', ')
-                    if currState == 'free':
-                        self.freeCPU -= len(jobs)
-                
+        
+        try:
             line = self.stream.readline()
+            while line:
+                parsed = self.pRegex.match(line)
+                if parsed:
+                    if parsed.group(1) == 'state':
+                
+                        currState = parsed.group(2).strip()
+                
+                    elif parsed.group(1) == 'np':
+                
+                        procNum = int(parsed.group(2).strip())
+                        if not ('down' in currState or 'offline' in currState or 'unknown' in currState):
+                            self.totalCPU += procNum
+                        if currState == 'free':
+                            self.freeCPU += procNum
+                
+                    elif parsed.group(1) == 'jobs':
+                    
+                        jobList = parsed.group(2).strip()
+                        if currState == 'free' and len(jobList) > 0:
+                            self.freeCPU -= jobList.count(',') + 1
+                
+                line = self.stream.readline()
+        
+        except:
+            etype, evalue, etraceback = sys.exc_info()
+            self.errList.append("%s: (%s)" % (etype, evalue))
 
 
-def parseCPUInfo(pbsHost, filename=None):
+def parseCPUInfo(pbsHost=None, filename=None):
 
     if filename:
         cmd = shlex.split('cat ' + filename)
     else:
-        cmd = shlex.split('pbsnodes -a -s %s' % pbsHost)
+        if pbsHost:
+            cmd = shlex.split('pbsnodes -a -s %s' % pbsHost)
+        else:
+            cmd = shlex.split('pbsnodes -a')
+            
 
     container = CPUInfoHandler()
     CommonUtils.parseStream(cmd, container)

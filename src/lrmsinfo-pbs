@@ -25,8 +25,9 @@ from TorqueInfoUtils import PBSNodesHandler
 from TorqueInfoUtils import QStatHandler
 
 def usage():
-    print "Usage: lrmsinfo-pbs [-i <input_file>]"
+    print "Usage: lrmsinfo-pbs [-i <input_file>] [-s <server_name>]"
     print "  input_file : optional text file containing 'qstat -f' output"
+    print "  server_name : optional PBS host address"
 
 class StreamContainer:
 
@@ -39,15 +40,18 @@ class StreamContainer:
 def main():
     try:
         infile = None
+        pbsHost = None
         
         opts, args = getopt.getopt(sys.argv[1:], "i:", ["input="])
         for optName, optValue in opts:
             if optName in ("-i", "--input"):
                 infile = optValue
+            if optName in ("-s", "--server"):
+                pbsHost = optValue
         
-        ncpu, freecpu = PBSNodesHandler.parse(infile)
-        sys.stdout.write("nactive      %d\n" % ncpu)
-        sys.stdout.write("nfree        %d\n" % freecpu)
+        container = PBSNodesHandler.parseCPUInfo(pbsHost, infile)
+        sys.stdout.write("nactive      %d\n" % container.totalCPU)
+        sys.stdout.write("nfree        %d\n" % container.freeCPU)
         # timestamp refers to UTC
         sys.stdout.write("now          %d\n" % int(time.time() + time.timezone))
         #
