@@ -201,11 +201,14 @@ class LRMSVersionHandler(Thread):
                 self.version = parsed.group(1).strip()
             line = self.stream.readline()
 
-def parseLRMSVersion(pbsHost, filename=None):
+def parseLRMSVersion(pbsHost=None, filename=None):
     if filename:
         cmd = shlex.split('cat ' + filename)
     else:
-        cmd = shlex.split('qstat -B -f %s' % pbsHost)
+        if pbsHost:
+            cmd = shlex.split('qstat -B -f %s' % pbsHost)
+        else:
+            cmd = shlex.split('qstat -B -f')
 
     container = LRMSVersionHandler()
     CommonUtils.parseStream(cmd, container)
@@ -383,11 +386,14 @@ class QueueInfoHandler(Thread):
             self.maxVMem = self.defaultVMem
 
 
-def parseQueueInfo(pbsHost, queue, filename=None):
+def parseQueueInfo(queue, pbsHost=None, filename=None):
     if filename:
         cmd = shlex.split('cat ' + filename)
     else:
-        cmd = shlex.split('qstat -Q -f %s\@%s' % (queue, pbsHost))
+        if pbsHost:
+            cmd = shlex.split('qstat -Q -f %s\@%s' % (queue, pbsHost))
+        else:
+            cmd = shlex.split('qstat -Q -f %s' % queue)
 
     container = QueueInfoHandler()
     CommonUtils.parseStream(cmd, container)

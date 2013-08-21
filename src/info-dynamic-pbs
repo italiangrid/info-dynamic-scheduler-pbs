@@ -17,7 +17,6 @@
 
 import sys
 import re
-import socket
 import time
 import shlex
 import subprocess
@@ -30,7 +29,6 @@ from TorqueInfoUtils import PBSNodesHandler
 
 def main():
     
-    hostname = socket.getfqdn()
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
     try:
@@ -57,10 +55,7 @@ def main():
             config["glue2-static-file-computing-share"] = "/var/lib/bdii/gip/ldif/ComputingShare.ldif"
             
         if not "pbs-host" in config:
-            config["pbs-host"] = hostname
-            
-        if not "input-data-file" in config:
-            config["input-data-file"] = None
+            config["pbs-host"] = None
 
     except Exception, ex:
         sys.stderr.write(str(ex) + '\n')
@@ -91,12 +86,12 @@ def main():
                 allQueues.add(queue)
 
     
-        lrmsVer = QStatHandler.parseLRMSVersion(config["pbs-host"], config["input-data-file"])
+        lrmsVer = QStatHandler.parseLRMSVersion(config["pbs-host"])
         
-        cpuInfoHandler = PBSNodesHandler.parseCPUInfo(config["pbs-host"], config["input-data-file"])
+        cpuInfoHandler = PBSNodesHandler.parseCPUInfo(config["pbs-host"])
     
         for queue in allQueues:
-            qInfoHandlers[queue] = QStatHandler.parseQueueInfo(config["pbs-host"], queue, config["input-data-file"])
+            qInfoHandlers[queue] = QStatHandler.parseQueueInfo(queue, config["pbs-host"])
             
     except Exception, ex:
         sys.stderr.write(str(ex) + '\n')
