@@ -47,19 +47,19 @@ Server: cert-34.pd.infn.it
     default_node = lcgpro
     node_pack = False
     mail_domain = never
-    pbs_version = %s
+    pbs_version = %(lrmsver)s
     kill_delay = 10
     next_job_number = 11
     net_counter = 3 0 0
     authorized_users = *@cert-34.pd.infn.it
 '''
 
-        self.jobPattern = '''# qstat -f
-Job Id: %s.cert-34.pd.infn.it
-    Job_Name = %s
+        self.jobPattern = '''# item from qstat -f
+Job Id: %(jserial)s.cert-34.pd.infn.it
+    Job_Name = %(jname)s
     Job_Owner = dteam013@cert-34.pd.infn.it
-    job_state = %s
-    queue = %s
+    job_state = %(jstate)s
+    queue = %(queue)s
     server = cert-34.pd.infn.it
     Checkpoint = u
     ctime = Wed Aug 21 11:37:25 2013
@@ -95,11 +95,28 @@ Job Id: %s.cert-34.pd.infn.it
     fault_tolerant = False
     submit_host = cert-34.pd.infn.it
     init_work_dir = /var/tmp
+
+'''
+
+        self.queuePattern = '''# item from qstat -Q -f
+Queue: %(queue)s
+    queue_type = Execution
+    total_jobs = 0
+    state_count = Transit:0 Queued:0 Held:0 Waiting:0 Running:0 Exiting:0 
+    resources_max.cput = %(maxcpu)s
+    resources_max.walltime = %(maxwt)s
+    acl_group_enable = True
+    acl_groups = dteam,infngrid,testers
+    mtime = 1375189536
+    resources_assigned.nodect = 0
+    enabled = True
+    started = True
+
 '''
 
 
     def test_lrmsver_ok(self):
-        pattern = self.srvPattern % '2.5.7'
+        pattern = self.srvPattern % {'lrmsver' : '2.5.7'}
         
         tmpfile = self.workspace.createFile(pattern)
         self.assertTrue(QStatHandler.parseLRMSVersion(None, tmpfile) == '2.5.7') 
@@ -112,18 +129,26 @@ Job Id: %s.cert-34.pd.infn.it
     
     def test_parse_job_ok(self):
     
-        pattern = self.jobPattern % ('01', 'cream_921657923', 'R', 'cert')
-        tmpfile = self.workspace.createFile(pattern)
+        pattern_args = {'jserial' : '01', 'jname' : 'cream_921657923', 'jstate' : 'R', 'queue' : 'cert'}
+        tmpfile = self.workspace.createFile(self.jobPattern % pattern_args)
         
-        pattern = self.jobPattern % ('02', 'cream_921657924', 'R', 'cert')
-        self.workspace.appendToFile(pattern, tmpfile)
+        pattern_args = {'jserial' : '02', 'jname' : 'cream_921657924', 'jstate' : 'R', 'queue' : 'cert'}
+        self.workspace.appendToFile(self.jobPattern % pattern_args, tmpfile)
         
         outList = list()
         QStatHandler.parse(outList, tmpfile)
         self.assertTrue(len(outList) == 2) 
         
          
-
+    def test_parse_queue_ok(self):
+        
+        pattern_args = {'queue' : 'cert', 'maxcpu' : '24:00:00', 'maxwt' : '36:00:00'}
+        tmpfile = self.workspace.createFile(self.queuePattern % pattern_args)
+        
+        container = QStatHandler.parseQueueInfo('cert', None, tmpfile)
+        result = container.maxCPUtime == 86400
+        result = result and container.maxWallTime == 129600
+        self.assertTrue(result)
 
 if __name__ == '__main__':
     unittest.main()
