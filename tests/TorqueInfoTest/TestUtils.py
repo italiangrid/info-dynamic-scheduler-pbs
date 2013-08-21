@@ -39,4 +39,11 @@ class Workspace:
         dataFile.write(data)
         dataFile.close()
         return tmpfilename
+        
+    def appendToFile(self, data, filename):
+        dataFile = open(filename, 'a')
+        dataFile.write(data)
+        dataFile.close()
+
+
 
