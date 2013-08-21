@@ -17,6 +17,7 @@
 import sys
 import re
 import subprocess
+import traceback
 from threading import Thread
 
 class ErrorHandler(Thread):
@@ -34,6 +35,9 @@ class ErrorHandler(Thread):
 
 
 def parseStream(cmd, container):
+
+    processErr = None
+    
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
@@ -49,14 +53,16 @@ def parseStream(cmd, container):
         stderr_thread.join()
         
         if ret_code <> 0:
-            raise Exception(stderr_thread.message)
+            processErr = stderr_thread.message
             
         if len(container.errList) > 0:
-            raise Exception(container.errList[0])
+            processErr = container.errList[0]
 
     except:
-        etype, evalue, etraceback = sys.exc_info()
-        raise Exception("%s: (%s)" % (etype, evalue))
+        raise Exception(errorMsgFromTrace())
+
+    if processErr:
+        raise Exception(processErr)
 
 
 
@@ -131,4 +137,20 @@ def readConfigFile(configFile):
             conffile.close()
 
     return config
+
+
+def errorMsgFromTrace():
+
+    etype, evalue, etraceback = sys.exc_info()
+    trMessage = ''
+    
+    trList = traceback.extract_tb(etraceback)
+    for trArgs in trList:
+        if 'TorqueInfoUtils' in trArgs[0]:
+            trMessage = '%s: %d' % (trArgs[0], trArgs[1])
+    
+    result = '%s (%s)' % (evalue, trMessage)
+    return result
+
+
 

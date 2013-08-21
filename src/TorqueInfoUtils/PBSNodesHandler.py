@@ -67,8 +67,7 @@ class CPUInfoHandler(Thread):
                 line = self.stream.readline()
         
         except:
-            etype, evalue, etraceback = sys.exc_info()
-            self.errList.append("%s: (%s)" % (etype, evalue))
+            self.errList.append(CommonUtils.errorMsgFromTrace())
 
 
 def parseCPUInfo(pbsHost=None, filename=None):
