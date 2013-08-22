@@ -61,7 +61,7 @@ def main():
 
         
         sContainer = StreamContainer(sys.stdout)
-        QStatHandler.parse(sContainer, infile)        
+        QStatHandler.parse(sContainer, pbsHost, infile)        
 
     except getopt.GetoptError:
         print sys.argv[0] + ": error parsing command line\n"

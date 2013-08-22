@@ -169,12 +169,15 @@ class PBSJobHandler(Thread):
 
 
 
-def parse(resultContainer, filename=None):
+def parse(resultContainer, pbsHost=None, filename=None):
 
     if filename:
         cmd = shlex.split('cat ' + filename)
     else:
-        cmd = shlex.split('qstat -f')
+        if pbsHost:
+            cmd = shlex.split('qstat -f @%s' % pbsHost)
+        else:
+            cmd = shlex.split('qstat -f')
         
     container = PBSJobHandler(resultContainer)
     CommonUtils.parseStream(cmd, container)
