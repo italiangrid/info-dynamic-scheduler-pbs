@@ -233,7 +233,6 @@ class QueueInfoHandler(Thread):
         self.policyPriority = None
         self.maxWallTime = -1
         self.defaultWallTime = -1
-        self.obtWallTime = -1
         self.maxProcCount = -1
         self.defaultProcCount = -1
         self.defaultMem = -1
@@ -356,25 +355,25 @@ class QueueInfoHandler(Thread):
         else:
             if self.started:
                 self.state = 'Draining'
-            
+        
+        #
+        # following from discussion in https://savannah.cern.ch/bugs/?49653
+        #
         if self.defaultCPUtime <> -1 and self.defaultPCPUtime <> -1:
             self.defaultCPUtime = min(self.defaultCPUtime, self.defaultPCPUtime)
-        if self.defaultPCPUtime <> -1:
+        if self.defaultCPUtime == -1 and self.defaultPCPUtime <> -1:
             self.defaultCPUtime = self.defaultPCPUtime
             
         if self.maxCPUtime <> -1 and self.maxPCPUtime <> -1:
             self.maxCPUtime = min(self.maxCPUtime, self.maxPCPUtime)
-        if self.maxPCPUtime <> -1:
+        if self.maxCPUtime == -1 and self.maxPCPUtime <> -1:
             self.maxCPUtime = self.maxPCPUtime
 
         if self.maxCPUtime == -1 and self.defaultCPUtime <> -1:
             self.maxCPUtime = self.defaultCPUtime
         
-        if self.maxWallTime <> -1:
-            self.obtWallTime = self.maxWallTime
-                
-        if self.maxWallTime == -1 and self.defaultWallTime <> -1:
-            self.maxWallTime = self.defaultWallTime
+        if self.maxWallTime <> -1 and self.defaultWallTime == -1:
+            self.defaultWallTime = self.maxWallTime
 
         if self.maxProcCount == -1 and self.defaultProcCount <> -1:
             self.maxProcCount = self.defaultProcCount
