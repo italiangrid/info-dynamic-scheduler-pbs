@@ -25,82 +25,44 @@ import getopt
 import string
 import commands
 
+from TorqueInfoUtils import MAUIHandler
+
 def usage():
-    print "Usage: vomaxjobs-maui [-h <schedulerhost>]"
+    print "Usage: vomaxjobs-maui [-h <schedulerhost>] [-k keyfile] [-i inputfile]"
     
 
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "h:i:k:",
-                               ["host=","input=","keyfile="])
-except getopt.GetoptError:
-    # print help information and exit:
-    print sys.argv[0] + ": error parsing command line: " + \
-          string.join(sys.argv)
-    usage()
-    sys.exit(2)
 
-schedhost = None
-infile = None
-keyarg = None
+def main():
+    try:
 
-for o, a in opts:
-    if o in ("-h", "--host"):
-        schedhost = a
-    elif o in ("-i", "--input"):
-        infile = a
-    elif o in ("-k", "--keyfile"):
-        keyarg = a
+        schedhost = None
+        infile = None
+        keyarg = None
+
+        opts, args = getopt.getopt(sys.argv[1:], "h:i:k:",
+                                   ["host=","input=","keyfile="])
+
+        for opt, arg in opts:
+            if opt in ("-h", "--host"):
+                schedhost = arg
+            elif opt in ("-i", "--input"):
+                infile = arg
+            elif opt in ("-k", "--keyfile"):
+                keyarg = arg
         
-if infile:
-    cmd = '/bin/cat ' + infile
-else:
-    cmd = 'diagnose -g'
-    if schedhost:
-	cmd = cmd + ' --host=' + schedhost
-    if keyarg:
-	cmd = cmd + ' --keyfile=' + keyarg
-    
-(stat, out) = commands.getstatusoutput(cmd)
-if stat:
-    print sys.argv[0] + ': command \'' + cmd + '\'' + \
-          ' exited with nonzero status'
-    sys.exit(1)
+        container = MAUIHandler.parseJobLimit(schedhost, keyarg, infile)
+        sys.stdout.write(str(container.limitTable) + "\n")
 
-lines = out.split('\n')
+    except getopt.GetoptError:
+        print sys.argv[0] + ": error parsing command line\n"
+        usage()
+        sys.exit(2)
+    except:
+        etype, evalue, etraceback = sys.exc_info()
+        sys.excepthook(etype, evalue, etraceback)
+        sys.exit(3)
 
-# gather information on groups (==vos)
 
-### strategy: look for first line with 1st field == "Name"
-### and 2nd field == "Priority"; get field headings from here,
-### then skip one line and start picking up groups.  Keep going
-### til end of "lines".
-
-linenr = 0
-for line in lines:
-    fields = line.split()
-    if len(fields) > 2 and fields[0] == "Name" and fields[1] == "Priority": break
-    linenr += 1
-
-fieldnames = lines[linenr].split()
-gpos = fieldnames.index('Name')  # output column for group name
-lpos = fieldnames.index('Limits')  # output column for group process cap
-
-# collect process caps for each group
-
-pcaps = {}
-for line in lines[linenr+2:]:
-    f = line.split()
-    if len(f) == lpos + 1:
-        t = f[lpos]       # expect either [NONE] or MAXPROC=N or MAXPROC=N,M
-        if t.find('MAXPROC') == 0:
-            f2 = t.split('=')
-            if f2[1].find(',') >= 0: # then N,M format
-                max_asstring = f2[1].split(',')[1]  # choose hard limit
-            else:
-                max_asstring = f2[1] # MAXPROC=N format
-            
-            pcaps[f[gpos]] = int( max_asstring )
-
-print pcaps
-
+if __name__ == "__main__":
+    main()
 

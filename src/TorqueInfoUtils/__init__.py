@@ -14,6 +14,6 @@
 # See the License for the specific language governing permissions and 
 # limitations under the License.
 
-__all__ = ["QStatHandler", "PBSNodesHandler", "CommonUtils"]
+__all__ = ["QStatHandler", "PBSNodesHandler", "MAUIHandler", "CommonUtils"]
 
 
