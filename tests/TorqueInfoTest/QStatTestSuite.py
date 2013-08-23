@@ -60,6 +60,11 @@ Job Id: %(jserial)s.cert-34.pd.infn.it
     Job_Owner = dteam013@cert-34.pd.infn.it
     job_state = %(jstate)s
     queue = %(queue)s
+    euser = dteam013
+    egroup = dteam
+    qtime = %(qtime)s
+    Resource_List.walltime = 36:00:00
+    %(pair1)s
     server = cert-34.pd.infn.it
     Checkpoint = u
     ctime = Wed Aug 21 11:37:25 2013
@@ -71,7 +76,6 @@ Job Id: %(jserial)s.cert-34.pd.infn.it
     mtime = Wed Aug 21 11:37:25 2013
     Output_Path = cert-34.pd.infn.it:/dev/null
     Priority = 0
-    qtime = Wed Aug 21 11:37:25 2013
     Rerunable = True
     Resource_List.neednodes = 1
     Resource_List.nodect = 1
@@ -86,8 +90,6 @@ Job Id: %(jserial)s.cert-34.pd.infn.it
 	PBS_O_MAIL=/var/spool/mail/dteam013,PBS_O_SHELL=/bin/sh,
 	PBS_O_HOST=cert-34.pd.infn.it,PBS_SERVER=cert-34.pd.infn.it,
 	PBS_O_WORKDIR=/var/tmp
-    euser = dteam013
-    egroup = dteam
     queue_rank = 23
     queue_type = E
     etime = Wed Aug 21 11:37:25 2013
@@ -127,18 +129,60 @@ Queue: %(queue)s
         tmpfile = self.workspace.createFile(pattern)
         self.assertTrue(QStatHandler.parseLRMSVersion(None, tmpfile) == None)
     
-    def test_parse_job_ok(self):
+    def test_parse_job_qtime_ok(self):
     
-        pattern_args = {'jserial' : '01', 'jname' : 'cream_921657923', 'jstate' : 'R', 'queue' : 'cert'}
+        pattern_args = {'jserial' : '01', 
+                        'jname' : 'cream_921657923', 
+                        'jstate' : 'Q',
+                        'qtime' : 'Wed Aug 21 11:37:25 2013',
+                        'queue' : 'cert',
+                        'pair1' : 'dummy1 = None'}
         tmpfile = self.workspace.createFile(self.jobPattern % pattern_args)
         
-        pattern_args = {'jserial' : '02', 'jname' : 'cream_921657924', 'jstate' : 'R', 'queue' : 'cert'}
+        pattern_args = {'jserial' : '02', 
+                        'jname' : 'cream_921657924', 
+                        'jstate' : 'Q',
+                        'qtime' : 'Wed Aug 21 11:37:30 2013',
+                        'queue' : 'cert',
+                        'pair1' : 'dummy1 = None'}
         self.workspace.appendToFile(self.jobPattern % pattern_args, tmpfile)
         
         outList = list()
-        QStatHandler.parse(outList, tmpfile)
-        self.assertTrue(len(outList) == 2) 
+        QStatHandler.parse(outList, None, tmpfile)
+        qtimeCount = 0
+        for jtable in outList:
+            if jtable['qtime'] == 1377074245 or jtable['qtime'] == 1377074250:
+                qtimeCount += 1
+        self.assertTrue(qtimeCount == 2) 
         
+    def test_parse_job_stime_ok(self):
+    
+        pattern_args = {'jserial' : '01', 
+                        'jname' : 'cream_921657923', 
+                        'jstate' : 'R',
+                        'qtime' : 'Wed Aug 21 11:37:25 2013',
+                        'queue' : 'cert',
+                        'pair1' : 'start_time = Wed Aug 21 11:37:26 2013'}
+        tmpfile = self.workspace.createFile(self.jobPattern % pattern_args)
+        
+        pattern_args = {'jserial' : '02', 
+                        'jname' : 'cream_921657924', 
+                        'jstate' : 'Q',
+                        'qtime' : 'Wed Aug 21 11:37:30 2013',
+                        'queue' : 'cert',
+                        'pair1' : 'dummy1 = None'}
+        self.workspace.appendToFile(self.jobPattern % pattern_args, tmpfile)
+        
+        outList = list()
+        QStatHandler.parse(outList, None, tmpfile)
+        stimeCount = 0
+        for jtable in outList:
+            try:
+                if jtable['start'] == 1377074246 and jtable['startAnchor'] == 'start_time':
+                    stimeCount += 1
+            except:
+                pass
+        self.assertTrue(stimeCount == 1) 
          
     def test_parse_queue_ok(self):
         
