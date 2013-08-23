@@ -61,7 +61,7 @@ class PBSJobHandler(Thread):
     def run(self):
         line = self.stream.readline()
         currTable = None
-        now = int(time.time())
+        now = int(time.time()) + time.timezone
         
         while line:
             parsed = self.pRegex.match(line)
