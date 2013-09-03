@@ -40,8 +40,6 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%dir /usr/share/lcg-info-dynamic-scheduler-pbs/templates
-/usr/share/lcg-info-dynamic-scheduler-pbs/templates/*.conf
 /usr/libexec/info-dynamic-pbs
 /usr/libexec/lrmsinfo-pbs
 /usr/libexec/vomaxjobs-maui

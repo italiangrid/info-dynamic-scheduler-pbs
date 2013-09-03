@@ -37,11 +37,6 @@ class bdist_rpm(_bdist_rpm):
         execScript(shlex.split(cmdline)).communicate()
 
 
-config_list = [
-               "config/lcg-info-dynamic-scheduler-pbs-maui.conf",
-               "config/lcg-info-dynamic-scheduler-pbs-unknown.conf"
-              ]
-
 libexec_list = [
                 "src/info-dynamic-pbs",
                 "src/lrmsinfo-pbs",
@@ -59,7 +54,6 @@ plugins here are for Maui (scheduler) and PBS/Torque (LRMS).''',
       packages=['TorqueInfoUtils'],
       package_dir = {'': 'src'},
       data_files=[
-                  ('usr/share/lcg-info-dynamic-scheduler-pbs/templates', config_list),
                   ('etc/lrms', ['config/pbs.conf']),
                   ('usr/libexec', libexec_list)
                  ],
