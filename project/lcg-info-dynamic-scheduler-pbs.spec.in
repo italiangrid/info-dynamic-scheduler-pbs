@@ -45,13 +45,13 @@ rm -rf %{buildroot}
 /usr/libexec/info-dynamic-pbs
 /usr/libexec/lrmsinfo-pbs
 /usr/libexec/vomaxjobs-maui
+%dir %{python_sitelib}/TorqueInfoUtils
 %{python_sitelib}/TorqueInfoUtils/*.py
 %{python_sitelib}/TorqueInfoUtils/*.pyc
 %{python_sitelib}/TorqueInfoUtils/*.pyo
 %if 0%{?el6}
 %{python_sitelib}/*.egg-info
 %endif
-%dir /etc/lrms
 %config(noreplace) /etc/lrms/pbs.conf
 
 %changelog
