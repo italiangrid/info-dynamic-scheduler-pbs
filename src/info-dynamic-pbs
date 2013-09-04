@@ -37,20 +37,6 @@ def main():
             
         config = CommonUtils.readConfigFile(sys.argv[1])
 
-        if not "outputformat" in config:
-            if "GlueFormat" in config:
-                config["outputformat"] = config["GlueFormat"]
-            else:
-                config["outputformat"] = "both"
-        if config["outputformat"] not in ["glue1", "glue2", "both"]:
-            raise Exception("FATAL: Unknown output format specified in config file:%s" % config["outputformat"])
-
-        if not "pbs-host" in config:
-            config["pbs-host"] = None
-            
-        if not "bdii-configfile" in config:
-            config["bdii-configfile"] = '/etc/bdii/bdii.conf'
-
     except Exception, ex:
         sys.stderr.write(str(ex) + '\n')
         sys.exit(1)
