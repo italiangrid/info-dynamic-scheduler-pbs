@@ -18,6 +18,7 @@ import sys
 import re
 import time
 import shlex
+import os, os.path
 from threading import Thread
 
 from TorqueInfoUtils import CommonUtils
@@ -87,5 +88,15 @@ def parseJobLimit(pbsHost=None, keyfile=None, filename=None):
     container = DiagnoseHandler()
     CommonUtils.parseStream(cmd, container)
     return container
+
+
+def available():
+
+    for pDir in os.environ['PATH'].split(':'):
+        if os.path.exists(os.path.join(pDir, 'diagnose')):
+            return True
+    return False
+
+
 
 

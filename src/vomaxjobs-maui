@@ -50,8 +50,11 @@ def main():
             elif opt in ("-k", "--keyfile"):
                 keyarg = arg
         
-        container = MAUIHandler.parseJobLimit(schedhost, keyarg, infile)
-        sys.stdout.write(str(container.limitTable) + "\n")
+        if MAUIHandler.available():
+            container = MAUIHandler.parseJobLimit(schedhost, keyarg, infile)
+            sys.stdout.write(str(container.limitTable) + "\n")
+        else:
+            sys.stdout.write("{}\n")
 
     except getopt.GetoptError:
         print sys.argv[0] + ": error parsing command line\n"
