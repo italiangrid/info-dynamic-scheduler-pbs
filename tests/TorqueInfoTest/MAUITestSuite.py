@@ -36,7 +36,7 @@ DEFAULT             0       [NONE]       [NONE]       [NONE]                [NON
 
     def test_diagnose_limited_ok(self):
         
-        pattern_args = {'group' : 'dteam', 'limit' : 'MAXPROC=50'}
+        pattern_args = {'group' : 'dteam', 'limit' : 'MAXJOB=50 MAXPROC=4'}
         tmpfile = self.workspace.createFile(self.diagPattern % pattern_args)
         
         container = MAUIHandler.parseJobLimit(None, None, tmpfile)

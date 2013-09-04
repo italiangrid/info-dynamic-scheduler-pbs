@@ -31,6 +31,7 @@ class DiagnoseHandler(Thread):
         Thread.__init__(self)
         self.errList = list()
         self.limitTable = dict()
+        self.limRegex = re.compile("MAXJOB=([0-9,]+)")
 
     def setStream(self, stream):
         self.stream = stream
@@ -58,12 +59,13 @@ class DiagnoseHandler(Thread):
             
                 if gpos <> -1 and lpos <> -1 and len(fields) > max(gpos, lpos):
                     
-                    # expect either [NONE] or MAXPROC=N or MAXPROC=N,M
+                    # expect either [NONE] or MAXJOB=N or MAXJOB=N,M
                     
                     group = fields[gpos]
                     limit = fields[lpos]
-                    if limit.startswith('MAXPROC='):
-                        tmpl = limit[8:].split(',')
+                    parsed = self.limRegex.search(limit)
+                    if parsed:
+                        tmpl = parsed.group(1).split(',')
                         if len(tmpl) > 1:
                             self.limitTable[group] = int(tmpl[1])
                         elif len(tmpl) > 0:
