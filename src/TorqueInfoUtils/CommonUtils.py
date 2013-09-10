@@ -16,6 +16,7 @@
 
 import sys
 import re
+import shlex
 import subprocess
 import traceback
 import glob
@@ -234,6 +235,9 @@ def readConfigFile(configFile):
             if tmpConf.has_option('LRMS','pbs-host'):
                 config['pbs-host'] = tmpConf.get('LRMS', 'pbs-host')
     
+            if tmpConf.has_option('WSInterface','status-probe'):
+                config['status-probe'] = tmpConf.get('WSInterface', 'status-probe')
+    
     finally:
         if conffile:
             conffile.close()
@@ -268,6 +272,20 @@ def errorMsgFromTrace():
     
     result = '%s (%s)' % (evalue, trMessage)
     return result
+
+
+def interfaceIsOff(config):
+    try:
+    
+        if 'status-probe' in config:
+            retcode = subprocess.call(shlex.split(config['status-probe']))
+            return retcode == 1 or retcode == 2:
+        
+    except:
+        pass
+    
+    return False
+
 
 
 
