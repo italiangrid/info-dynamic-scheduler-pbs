@@ -32,7 +32,7 @@ class CPUInfoHandler(Thread):
         self.errList = list()
         self.totalCPU = 0
         self.freeCPU = 0
-        self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
+        self.pRegex = re.compile('^\s*([^=\s]+)\s*=(.+)$')
     
     def setStream(self, stream):
         self.stream = stream

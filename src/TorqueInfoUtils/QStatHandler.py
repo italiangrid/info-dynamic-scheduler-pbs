@@ -30,8 +30,8 @@ class PBSJobHandler(Thread):
         Thread.__init__(self)
         self.container = container
         self.errList = list()
-        self.jRegex = re.compile('^\s*Job Id:([^$]+)$')
-        self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
+        self.jRegex = re.compile('^\s*Job Id:(.+)$')
+        self.pRegex = re.compile('^\s*([^=\s]+)\s*=(.+)$')
 
     def setStream(self, stream):
         self.stream = stream
@@ -191,7 +191,7 @@ class LRMSVersionHandler(Thread):
         Thread.__init__(self)
         self.version = None
         self.errList = list()
-        self.pRegex = re.compile('^\s*pbs_version\s*=([^$]+)$')
+        self.pRegex = re.compile('^\s*pbs_version\s*=(.+)$')
     
     def setStream(self, stream):
         self.stream = stream
@@ -224,7 +224,7 @@ class QueueInfoHandler(Thread):
     def __init__(self):
         Thread.__init__(self)
         self.errList = list()
-        self.pRegex = re.compile('^\s*([^=\s]+)\s*=([^$]+)$')
+        self.pRegex = re.compile('^\s*([^=\s]+)\s*=(.+)$')
         self.cputRegex = re.compile('(\d+):(\d+):(\d+)')
         self.memRegex = re.compile('(\d+)([tgmkbw]+)')
         self.maxCPUtime = -1
