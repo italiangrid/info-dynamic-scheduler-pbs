@@ -54,7 +54,6 @@ plugins here are for Maui (scheduler) and PBS/Torque (LRMS).''',
       packages=['TorqueInfoUtils'],
       package_dir = {'': 'src'},
       data_files=[
-                  ('etc/lrms', ['config/pbs.conf']),
                   ('usr/libexec', libexec_list)
                  ],
       cmdclass={'bdist_rpm': bdist_rpm}
