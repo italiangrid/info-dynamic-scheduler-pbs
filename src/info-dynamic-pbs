@@ -20,6 +20,8 @@ import re
 import time
 import shlex
 import subprocess
+import logging
+import logging.config
 from threading import Thread
 
 from TorqueInfoUtils import CommonUtils
@@ -31,16 +33,15 @@ def main():
     
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
-    try:
-        if len(sys.argv) <> 2:
-            raise Exception("Usage: info-dynamic-pbs <config-file>")
-            
-        config = CommonUtils.readConfigFile(sys.argv[1])
-
-    except Exception, ex:
-        sys.stderr.write(str(ex) + '\n')
+    if len(sys.argv) <> 2:
+        sys.stderr.write("Usage: info-dynamic-pbs <config-file>\n")
         sys.exit(1)
 
+    try:
+        logging.config.fileConfig(sys.argv[1])
+    except Exception, conf_log_err:
+        logging.basicConfig(stream=sys.stderr)
+    
 
     glue1QueueTable = dict()
     glue2QueueTable = dict()
@@ -50,6 +51,8 @@ def main():
     
     try:
     
+        config = CommonUtils.readConfigFile(sys.argv[1])
+        
         if config['outputformat'] <> "glue2":
         
             glue1QueueTable = CommonUtils.parseLdif(config["bdii-configfile"], 'GLUE1')

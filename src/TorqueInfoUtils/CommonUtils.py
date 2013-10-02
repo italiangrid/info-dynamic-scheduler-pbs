@@ -21,7 +21,10 @@ import subprocess
 import traceback
 import glob
 import ConfigParser
+import logging
 from threading import Thread
+
+logger = logging.getLogger("CommonUtils")
 
 class ErrorHandler(Thread):
 
@@ -200,62 +203,51 @@ def parseLdif(bdiiConffile, glueType):
 
 def readConfigFile(configFile):
 
-    pRegex = re.compile('^\s*([^=\s]+)\s*=(.+)$')
     conffile = None
     config = dict()
-    
-    newFormat = False
+    vomap = dict()
     
     try:
     
+        tmpConf = ConfigParser.ConfigParser()
         conffile = open(configFile)
-        for line in conffile:
-            parsed = pRegex.match(line)
-            if parsed:
-                config[parsed.group(1)] = parsed.group(2).strip(' \n\t"')
-            else:
-                tmps = line.strip()
-                if tmps.startswith('['):
-                    newFormat = True
-                    break  
-                elif len(tmps) > 0 and not tmps.startswith('#'):
-                    raise Exception("Error parsing configuration file " + configFile)
-
-        if newFormat:
-            conffile.seek(0)
-            tmpConf = ConfigParser.ConfigParser()
-            tmpConf.readfp(conffile)
+        tmpConf.readfp(conffile)
             
-            if tmpConf.has_option('Main','outputformat'):
-                config['outputformat'] = tmpConf.get('Main', 'outputformat')
+        if tmpConf.has_option('Main','outputformat'):
+            config['outputformat'] = tmpConf.get('Main', 'outputformat').lower()
+        else:
+            config["outputformat"] = "both"
                 
-            if tmpConf.has_option('Main','bdii-configfile'):
-                config['bdii-configfile'] = tmpConf.get('Main', 'bdii-configfile')
+        if tmpConf.has_option('Main','bdii-configfile'):
+            config['bdii-configfile'] = tmpConf.get('Main', 'bdii-configfile')
+        else:
+            config["bdii-configfile"] = '/etc/bdii/bdii.conf'
                 
-            if tmpConf.has_option('LRMS','pbs-host'):
-                config['pbs-host'] = tmpConf.get('LRMS', 'pbs-host')
+        if tmpConf.has_option('Main','vomap'):
+            lines = tmpConf.get('Main','vomap').split('\n')
+            for line in lines:
+                tmpl = line.split(':')
+                if len(tmpl) == 2:
+                    group = tmpl[0].strip()
+                    vo = tmpl[1].strip()
+                    vomap[group] = vo
+
+        if tmpConf.has_option('LRMS','pbs-host'):
+            config['pbs-host'] = tmpConf.get('LRMS', 'pbs-host')
+        else:
+            config["pbs-host"] = None
     
-            if tmpConf.has_option('WSInterface','status-probe'):
-                config['status-probe'] = tmpConf.get('WSInterface', 'status-probe')
+        if tmpConf.has_option('WSInterface','status-probe'):
+            config['status-probe'] = tmpConf.get('WSInterface', 'status-probe')
     
     finally:
         if conffile:
             conffile.close()
 
-    if not "outputformat" in config:
-        if "GlueFormat" in config:
-            config["outputformat"] = config["GlueFormat"]
-        else:
-            config["outputformat"] = "both"
+    config['vomap'] = vomap
     
     if config["outputformat"] not in ["glue1", "glue2", "both"]:
         raise Exception("FATAL: Unknown output format specified in config file:%s" % config["outputformat"])
-
-    if not "pbs-host" in config:
-        config["pbs-host"] = None
-            
-    if not "bdii-configfile" in config:
-        config["bdii-configfile"] = '/etc/bdii/bdii.conf'
 
     return config
 
@@ -282,7 +274,7 @@ def interfaceIsOff(config):
             return retcode == 1 or retcode == 2
         
     except:
-        pass
+        logger.debug("Error running %s", config['status-probe'], exc_info=True)
     
     return False
 
