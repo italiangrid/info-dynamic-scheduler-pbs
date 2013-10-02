@@ -21,8 +21,11 @@ import shlex
 from threading import Thread
 import pwd
 import grp
+import logging
 
 from TorqueInfoUtils import CommonUtils
+
+logger = logging.getLogger("QStatHandler")
 
 class PBSJobHandler(Thread):
 
@@ -66,6 +69,9 @@ class PBSJobHandler(Thread):
         while line:
             parsed = self.pRegex.match(line)
             if parsed and currTable <> None:
+            
+                logger.debug("(Attribute info) Detected item: %s" % line.strip())
+            
                 key = parsed.group(1)
                 value = parsed.group(2).strip()
                 
@@ -85,7 +91,7 @@ class PBSJobHandler(Thread):
                             thisgroup=pwd.getpwnam(tmpt[0])[3]
                             currTable['group'] = grp.getgrgid(thisgroup)[0]
                         except:
-                            etype, evalue, etraceback = sys.exc_info()
+                            logger.debug("Error parsing job info output", exc_info=True)
                 
                 elif key == 'job_state':
                 
@@ -127,6 +133,8 @@ class PBSJobHandler(Thread):
             else:
                 parsed = self.jRegex.match(line)
                 if parsed:
+                
+                    logger.debug("(Job info) Detected item: %s" % line.strip())
                 
                     if currTable <> None:
                     
@@ -202,6 +210,7 @@ class LRMSVersionHandler(Thread):
             parsed = self.pRegex.match(line)
             if parsed:
                 self.version = parsed.group(1).strip()
+                logger.debug('Found version ' + self.version)
             line = self.stream.readline()
 
 def parseLRMSVersion(pbsHost=None, filename=None):
@@ -212,6 +221,8 @@ def parseLRMSVersion(pbsHost=None, filename=None):
             cmd = shlex.split('qstat -B -f %s' % pbsHost)
         else:
             cmd = shlex.split('qstat -B -f')
+
+    logger.debug("Calling executable: " + repr(cmd))
 
     container = LRMSVersionHandler()
     CommonUtils.parseStream(cmd, container)
@@ -277,6 +288,9 @@ class QueueInfoHandler(Thread):
         line = self.stream.readline()
         while line:
             parsed = self.pRegex.match(line)
+
+            logger.debug("(Queue info) Detected item: %s" % line.strip())
+                    
             if parsed:
                 if parsed.group(1) == 'resources_max.cput':
                 
@@ -396,6 +410,8 @@ def parseQueueInfo(queue, pbsHost=None, filename=None):
             cmd = shlex.split('qstat -Q -f %s\@%s' % (queue, pbsHost))
         else:
             cmd = shlex.split('qstat -Q -f %s' % queue)
+
+    logger.debug("Calling executable: " + repr(cmd))
 
     container = QueueInfoHandler()
     CommonUtils.parseStream(cmd, container)

@@ -65,6 +65,7 @@ def parseStream(cmd, container):
             processErr = container.errList[0]
 
     except:
+        logger.debug("Error running %s", repr(cmd), exc_info=True)
         raise Exception(errorMsgFromTrace())
 
     if processErr:
@@ -238,7 +239,7 @@ def readConfigFile(configFile):
             config["pbs-host"] = None
     
         if tmpConf.has_option('WSInterface','status-probe'):
-            config['status-probe'] = tmpConf.get('WSInterface', 'status-probe')
+            config['status-probe'] = tmpConf.get('WSInterface', 'status-probe').strip('"\'')
     
     finally:
         if conffile:

@@ -19,11 +19,12 @@ import re
 import time
 import shlex
 import subprocess
+import logging
 from threading import Thread
 
 from TorqueInfoUtils import CommonUtils
 
-
+logger = logging.getLogger("PBSNodesHandler")
 
 class CPUInfoHandler(Thread):
 
@@ -46,6 +47,9 @@ class CPUInfoHandler(Thread):
             while line:
                 parsed = self.pRegex.match(line)
                 if parsed:
+                
+                    logger.debug("Detected item: %s" % line.strip())
+                    
                     if parsed.group(1) == 'state':
                 
                         currState = parsed.group(2).strip()
@@ -67,6 +71,7 @@ class CPUInfoHandler(Thread):
                 line = self.stream.readline()
         
         except:
+            logger.debug("Error parsing pbsnodes output", exc_info=True)
             self.errList.append(CommonUtils.errorMsgFromTrace())
 
 
@@ -80,6 +85,7 @@ def parseCPUInfo(pbsHost=None, filename=None):
         else:
             cmd = shlex.split('pbsnodes -a')
             
+    logger.debug("Calling executable: " + repr(cmd))
 
     container = CPUInfoHandler()
     CommonUtils.parseStream(cmd, container)
