@@ -141,7 +141,7 @@ class PBSJobHandler(Thread):
                         if not 'user' in currTable:
                             self.errList.append("Cannot find user for " + currTable['jobid'])
                         if not 'group' in currTable:
-                            self.errList.append("Cannot find user for " + currTable['jobid'])
+                            self.errList.append("Cannot find group for " + currTable['jobid'])
                         if 'walltime' in currTable:
                             if not 'start' in currTable:
                                 currTable['start'] = now - currTable['walltime']
@@ -162,7 +162,7 @@ class PBSJobHandler(Thread):
             if not 'user' in currTable:
                 self.errList.append("Cannot find user for " + currTable['jobid'])
             if not 'group' in currTable:
-                self.errList.append("Cannot find user for " + currTable['jobid'])
+                self.errList.append("Cannot find group for " + currTable['jobid'])
             if 'walltime' in currTable:
                 if not 'start' in currTable:
                     currTable['start'] = now - currTable['walltime']
