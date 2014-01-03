@@ -230,6 +230,8 @@ def parseLRMSVersion(pbsHost=None, filename=None):
 
 
 
+RES_UNDEF = -1
+
 class QueueInfoHandler(Thread):
 
     def __init__(self, def_values=None):
@@ -254,20 +256,20 @@ class QueueInfoHandler(Thread):
             self.maxMem = def_values.maxMem
             self.maxVMem = def_values.maxVMem
         else:
-            self.maxCPUtime = -1
-            self.defaultCPUtime = -1
-            self.maxPCPUtime = -1
-            self.defaultPCPUtime = -1
-            self.maxTotJobs = -1
-            self.maxRunJobs = -1
-            self.maxWallTime = -1
-            self.defaultWallTime = -1
-            self.maxProcCount = -1
-            self.defaultProcCount = -1
-            self.defaultMem = -1
-            self.defaultVMem = -1
-            self.maxMem = -1
-            self.maxVMem = -1
+            self.maxCPUtime = RES_UNDEF
+            self.defaultCPUtime = RES_UNDEF
+            self.maxPCPUtime = RES_UNDEF
+            self.defaultPCPUtime = RES_UNDEF
+            self.maxTotJobs = RES_UNDEF
+            self.maxRunJobs = RES_UNDEF
+            self.maxWallTime = RES_UNDEF
+            self.defaultWallTime = RES_UNDEF
+            self.maxProcCount = RES_UNDEF
+            self.defaultProcCount = RES_UNDEF
+            self.defaultMem = RES_UNDEF
+            self.defaultVMem = RES_UNDEF
+            self.maxMem = RES_UNDEF
+            self.maxVMem = RES_UNDEF
         self.policyPriority = None
         self.enabled = False
         self.started = False
@@ -392,29 +394,29 @@ class QueueInfoHandler(Thread):
         #
         # following from discussion in https://savannah.cern.ch/bugs/?49653
         #
-        if self.defaultCPUtime <> -1 and self.defaultPCPUtime <> -1:
+        if self.defaultCPUtime <> RES_UNDEF and self.defaultPCPUtime <> RES_UNDEF:
             self.defaultCPUtime = min(self.defaultCPUtime, self.defaultPCPUtime)
-        if self.defaultCPUtime == -1 and self.defaultPCPUtime <> -1:
+        if self.defaultCPUtime == RES_UNDEF and self.defaultPCPUtime <> RES_UNDEF:
             self.defaultCPUtime = self.defaultPCPUtime
             
-        if self.maxCPUtime <> -1 and self.maxPCPUtime <> -1:
+        if self.maxCPUtime <> RES_UNDEF and self.maxPCPUtime <> RES_UNDEF:
             self.maxCPUtime = min(self.maxCPUtime, self.maxPCPUtime)
-        if self.maxCPUtime == -1 and self.maxPCPUtime <> -1:
+        if self.maxCPUtime == RES_UNDEF and self.maxPCPUtime <> RES_UNDEF:
             self.maxCPUtime = self.maxPCPUtime
 
-        if self.maxCPUtime <> -1 and self.defaultCPUtime == -1:
+        if self.maxCPUtime <> RES_UNDEF and self.defaultCPUtime == RES_UNDEF:
             self.defaultCPUtime = self.maxCPUtime
         
-        if self.maxWallTime <> -1 and self.defaultWallTime == -1:
+        if self.maxWallTime <> RES_UNDEF and self.defaultWallTime == RES_UNDEF:
             self.defaultWallTime = self.maxWallTime
 
-        if self.maxProcCount == -1 and self.defaultProcCount <> -1:
+        if self.maxProcCount == RES_UNDEF and self.defaultProcCount <> RES_UNDEF:
             self.maxProcCount = self.defaultProcCount
             
-        if self.maxMem == -1 and self.defaultMem <> -1:
+        if self.maxMem == RES_UNDEF and self.defaultMem <> RES_UNDEF:
             self.maxMem = self.defaultMem
 
-        if self.maxVMem == -1 and self.defaultVMem <> -1:
+        if self.maxVMem == RES_UNDEF and self.defaultVMem <> RES_UNDEF:
             self.maxVMem = self.defaultVMem
 
 
