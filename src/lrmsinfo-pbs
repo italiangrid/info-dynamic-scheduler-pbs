@@ -42,7 +42,7 @@ def main():
         infile = None
         pbsHost = None
         
-        opts, args = getopt.getopt(sys.argv[1:], "i:", ["input="])
+        opts, args = getopt.getopt(sys.argv[1:], "i:s:", ["input=", "server="])
         for optName, optValue in opts:
             if optName in ("-i", "--input"):
                 infile = optValue
