@@ -386,8 +386,8 @@ class QueueInfoHandler(Thread):
         if self.maxCPUtime == -1 and self.maxPCPUtime <> -1:
             self.maxCPUtime = self.maxPCPUtime
 
-        if self.maxCPUtime == -1 and self.defaultCPUtime <> -1:
-            self.maxCPUtime = self.defaultCPUtime
+        if self.maxCPUtime <> -1 and self.defaultCPUtime == -1:
+            self.defaultCPUtime = self.maxCPUtime
         
         if self.maxWallTime <> -1 and self.defaultWallTime == -1:
             self.defaultWallTime = self.maxWallTime
