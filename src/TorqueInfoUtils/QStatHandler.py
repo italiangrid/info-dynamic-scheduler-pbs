@@ -232,27 +232,43 @@ def parseLRMSVersion(pbsHost=None, filename=None):
 
 class QueueInfoHandler(Thread):
 
-    def __init__(self):
+    def __init__(self, def_values=None):
         Thread.__init__(self)
         self.errList = list()
         self.pRegex = re.compile('^\s*([^=\s]+)\s*=(.+)$')
         self.cputRegex = re.compile('(\d+):(\d+):(\d+)')
         self.memRegex = re.compile('(\d+)([tgmkbw]+)')
-        self.maxCPUtime = -1
-        self.defaultCPUtime = -1
-        self.maxPCPUtime = -1
-        self.defaultPCPUtime = -1
-        self.maxTotJobs = -1
-        self.maxRunJobs = -1
+        if def_values:
+            self.maxCPUtime = def_values.maxCPUtime
+            self.defaultCPUtime = def_values.defaultCPUtime
+            self.maxPCPUtime = def_values.maxPCPUtime
+            self.defaultPCPUtime = def_values.defaultPCPUtime
+            self.maxTotJobs = def_values.maxTotJobs
+            self.maxRunJobs = def_values.maxRunJobs
+            self.maxWallTime = def_values.maxWallTime
+            self.defaultWallTime = def_values.defaultWallTime
+            self.maxProcCount = def_values.maxProcCount
+            self.defaultProcCount = def_values.defaultProcCount
+            self.defaultMem = def_values.defaultMem
+            self.defaultVMem = def_values.defaultVMem
+            self.maxMem = def_values.maxMem
+            self.maxVMem = def_values.maxVMem
+        else:
+            self.maxCPUtime = -1
+            self.defaultCPUtime = -1
+            self.maxPCPUtime = -1
+            self.defaultPCPUtime = -1
+            self.maxTotJobs = -1
+            self.maxRunJobs = -1
+            self.maxWallTime = -1
+            self.defaultWallTime = -1
+            self.maxProcCount = -1
+            self.defaultProcCount = -1
+            self.defaultMem = -1
+            self.defaultVMem = -1
+            self.maxMem = -1
+            self.maxVMem = -1
         self.policyPriority = None
-        self.maxWallTime = -1
-        self.defaultWallTime = -1
-        self.maxProcCount = -1
-        self.defaultProcCount = -1
-        self.defaultMem = -1
-        self.defaultVMem = -1
-        self.maxMem = -1
-        self.maxVMem = -1
         self.enabled = False
         self.started = False
         self.state = 'Closed'
@@ -416,5 +432,37 @@ def parseQueueInfo(queue, pbsHost=None, filename=None):
     container = QueueInfoHandler()
     CommonUtils.parseStream(cmd, container)
     return container
+
+def parseAllQueuesInfo(queues, pbsHost=None):
+    
+    handlers = dict()
+    
+    #Reading server-level attributes
+    if pbsHost:
+        cmd = shlex.split('qstat -B -f @%s' % pbsHost)
+    else:
+        cmd = shlex.split('qstat -B -f')
+    slh = QueueInfoHandler()
+    CommonUtils.parseStream(cmd, slh)
+    
+    for queue in queues:
+    
+        if pbsHost:
+            cmd = shlex.split('qstat -Q -f %s\@%s' % (queue, pbsHost))
+        else:
+            cmd = shlex.split('qstat -Q -f %s' % queue)
+
+        logger.debug("Calling executable: " + repr(cmd))
+        
+        handlers[queue] = QueueInfoHandler(slh)
+        CommonUtils.parseStream(cmd, handlers[queue])
+    
+    return handlers
+        
+
+
+
+
+
 
 

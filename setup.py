@@ -6,7 +6,7 @@ from distutils.core import setup
 from distutils.command.bdist_rpm import bdist_rpm as _bdist_rpm
 
 pkg_name = 'lcg-info-dynamic-scheduler-pbs'
-pkg_version = '2.4.3'
+pkg_version = '2.4.4'
 pkg_release = '1'
 
 source_items = "config setup.py src"

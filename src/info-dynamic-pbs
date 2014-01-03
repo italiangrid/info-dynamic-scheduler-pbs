@@ -47,7 +47,6 @@ def main():
     glue2QueueTable = dict()
     managerTable = None
     allQueues = set()
-    qInfoHandlers = dict()
     
     try:
     
@@ -71,8 +70,7 @@ def main():
         
         cpuInfoHandler = PBSNodesHandler.parseCPUInfo(config["pbs-host"])
     
-        for queue in allQueues:
-            qInfoHandlers[queue] = QStatHandler.parseQueueInfo(queue, config["pbs-host"])
+        qInfoHandlers = QStatHandler.parseAllQueuesInfo(allQueues, config["pbs-host"])
             
     except Exception, ex:
         sys.stderr.write(str(ex) + '\n')
