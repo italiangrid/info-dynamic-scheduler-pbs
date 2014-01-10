@@ -59,7 +59,30 @@ class PBSJobHandler(Thread):
         return  int(time.mktime(timetuple)) + time.timezone
     
     
-    
+    def _registerJobItem(self, jTable, now):
+        if jTable == None:
+            return
+                    
+        if not 'user' in jTable:
+            self.errList.append("Cannot find user for " + jTable['jobid'])
+            
+        if not 'group' in jTable:
+            # fix for bug CREAM-130
+            # it should be possible to extract
+            # and cache the real local group
+            # using maui-client (checkjob)
+            jTable['group'] = '__localgroup__'
+        
+        if 'walltime' in jTable:
+            if not 'start' in jTable:
+                jTable['start'] = now - jTable['walltime']
+                jTable['startAnchor'] = 'resources_used.walltime'
+        else:
+            if 'start' in jTable:
+                jTable['walltime'] = now - jTable['start']
+                        
+        self.container.append(jTable)
+        
     
     def run(self):
         line = self.stream.readline()
@@ -136,21 +159,7 @@ class PBSJobHandler(Thread):
                 
                     logger.debug("(Job info) Detected item: %s" % line.strip())
                 
-                    if currTable <> None:
-                    
-                        if not 'user' in currTable:
-                            self.errList.append("Cannot find user for " + currTable['jobid'])
-                        if not 'group' in currTable:
-                            self.errList.append("Cannot find group for " + currTable['jobid'])
-                        if 'walltime' in currTable:
-                            if not 'start' in currTable:
-                                currTable['start'] = now - currTable['walltime']
-                                currTable['startAnchor'] = 'resources_used.walltime'
-                        else:
-                            if 'start' in currTable:
-                                currTable['walltime'] = now - currTable['start']
-                        
-                        self.container.append(currTable)
+                    self._registerJobItem(currTable, now)
                     
                     currTable = dict()
                     currTable['jobid'] = parsed.group(1).strip()
@@ -158,20 +167,7 @@ class PBSJobHandler(Thread):
             
             line = self.stream.readline()
 
-        if currTable <> None:
-            if not 'user' in currTable:
-                self.errList.append("Cannot find user for " + currTable['jobid'])
-            if not 'group' in currTable:
-                self.errList.append("Cannot find group for " + currTable['jobid'])
-            if 'walltime' in currTable:
-                if not 'start' in currTable:
-                    currTable['start'] = now - currTable['walltime']
-                    currTable['startAnchor'] = 'resources_used.walltime'
-            else:
-                if 'start' in currTable:
-                    currTable['walltime'] = now - currTable['start']
-        
-            self.container.append(currTable)
+        self._registerJobItem(currTable, now)
 
     # end of thread
 
