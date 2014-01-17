@@ -105,7 +105,11 @@ fi
 ln -sf /etc/lrms/scheduler.conf /etc/lrms/pbs.conf
 
 %changelog
-* Thu Oct 31 2013 CREAM group <cream-support@lists.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Fri Jan 31 2014 CREAM group <cream-support@lists.infn.it> - @PKGVERSION@-@PKGRELEASE@
+- Fixed bug https://issues.infn.it/jira/browse/CREAM-130
+- Fixed bug https://issues.infn.it/jira/browse/CREAM-132
+
+* Thu Oct 31 2013 CREAM group <cream-support@lists.infn.it> - 2.4.3-1
 - Fixed bug https://issues.infn.it/jira/browse/CREAM-119
 - New package structure: triggers for bdii
 
