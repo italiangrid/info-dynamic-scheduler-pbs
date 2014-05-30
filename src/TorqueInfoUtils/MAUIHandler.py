@@ -84,7 +84,7 @@ def parseJobLimit(pbsHost=None, keyfile=None, filename=None):
         if pbsHost:
             tmps += ' --host=%s' % pbsHost
         if keyfile:
-            tmps =+ ' --keyfile=%s' % keyfile
+            tmps += ' --keyfile=%s' % keyfile
         cmd = shlex.split(tmps)
 
     container = DiagnoseHandler()
