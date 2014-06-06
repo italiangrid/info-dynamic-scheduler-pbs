@@ -30,6 +30,10 @@ from TorqueInfoUtils import PBSNodesHandler
 
 from TorqueInfoUtils.QStatHandler import RES_UNDEF
 
+MAX_INT32 = 2**31-1
+MAX_UINT32 = 2**32-1
+MAX_UINT64 = 2**64-1
+
 def main():
     
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -95,30 +99,48 @@ def main():
             
             if qInfo.defaultCPUtime <> RES_UNDEF:
                 out.write('GlueCEPolicyMaxCPUTime: %d\n' % (qInfo.defaultCPUtime / 60))
+            else:
+                out.write('GlueCEPolicyMaxCPUTime: %d\n' % MAX_INT32)
 
             if qInfo.maxCPUtime <> RES_UNDEF:
                 out.write('GlueCEPolicyMaxObtainableCPUTime: %d\n' % (qInfo.maxCPUtime / 60))
+            else:
+                out.write('GlueCEPolicyMaxObtainableCPUTime: %d\n' % MAX_INT32)
                 
             if qInfo.maxTotJobs <> RES_UNDEF:
                 out.write('GlueCEPolicyMaxTotalJobs: %d\n' % qInfo.maxTotJobs)
+            else:
+                out.write('GlueCEPolicyMaxTotalJobs: %d\n' % MAX_INT32)
                 
             if qInfo.policyPriority:
                 out.write('GlueCEPolicyPriority: %s\n' % qInfo.policyPriority)
+            else:
+                out.write('GlueCEPolicyPriority: %s\n' % MAX_INT32)
                 
             if qInfo.maxRunJobs <> RES_UNDEF:
                 out.write('GlueCEPolicyMaxRunningJobs: %d\n' % qInfo.maxRunJobs)
+            else:
+                out.write('GlueCEPolicyMaxRunningJobs: %d\n' % MAX_INT32)
                 
             if qInfo.maxTotJobs <> RES_UNDEF and qInfo.maxRunJobs <> RES_UNDEF:
                 out.write('GlueCEPolicyMaxWaitingJobs: %d\n' % (qInfo.maxTotJobs - qInfo.maxRunJobs))
+            else:
+                out.write('GlueCEPolicyMaxWaitingJobs: %d\n' % MAX_INT32)
                 
             if qInfo.defaultWallTime <> RES_UNDEF:
                 out.write('GlueCEPolicyMaxWallClockTime: %d\n' % (qInfo.defaultWallTime / 60))
+            else:
+                out.write('GlueCEPolicyMaxWallClockTime: %d\n' % MAX_INT32)
                 
             if qInfo.maxWallTime <> RES_UNDEF:
                 out.write('GlueCEPolicyMaxObtainableWallClockTime: %d\n' % (qInfo.maxWallTime / 60))
+            else:
+                out.write('GlueCEPolicyMaxObtainableWallClockTime: %d\n' % MAX_INT32)
                 
             if qInfo.maxProcCount <> RES_UNDEF:
                 out.write('GlueCEPolicyMaxSlotsPerJob: %d\n' % qInfo.maxProcCount)
+            else:
+                out.write('GlueCEPolicyMaxSlotsPerJob: %d\n' % MAX_INT32)
  
             if CommonUtils.interfaceIsOff(config):
                 out.write('GlueCEStateStatus: Draining\n')
@@ -144,21 +166,33 @@ def main():
             out.write(glue2DN + '\n')
             if qInfo.defaultCPUtime <> RES_UNDEF:
                 out.write('GLUE2ComputingShareDefaultCPUTime: %d\n' % qInfo.defaultCPUtime)
+            else:
+                out.write('GLUE2ComputingShareDefaultCPUTime: %d\n' % MAX_UINT64)
                 
             if qInfo.maxCPUtime <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxCPUTime: %d\n' % qInfo.maxCPUtime)
+            else:
+                out.write('GLUE2ComputingShareMaxCPUTime: %d\n' % MAX_UINT64)
                 
             if qInfo.defaultWallTime <> RES_UNDEF:
                 out.write('GLUE2ComputingShareDefaultWallTime: %d\n' % qInfo.defaultWallTime)
+            else:
+                out.write('GLUE2ComputingShareDefaultWallTime: %d\n' % MAX_UINT64)
                 
             if qInfo.maxWallTime <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxWallTime: %d\n' % qInfo.maxWallTime)
+            else:
+                out.write('GLUE2ComputingShareMaxWallTime: %d\n' % MAX_UINT64)
                 
             if qInfo.maxProcCount <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxSlotsPerJob: %d\n' % qInfo.maxProcCount)
+            else:
+                out.write('GLUE2ComputingShareMaxSlotsPerJob: %d\n' % MAX_UINT32)
                 
             if qInfo.maxRunJobs <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxRunningJobs: %d\n' % qInfo.maxRunJobs)
+            else:
+                out.write('GLUE2ComputingShareMaxRunningJobs: %d\n' % MAX_UINT32)
             
             #
             # TODO get info per vo (vomaxjobs-*)
@@ -166,15 +200,23 @@ def main():
             #    
             if qInfo.maxTotJobs <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxTotalJobs: %d\n' % qInfo.maxTotJobs)
+            else:
+                out.write('GLUE2ComputingShareMaxTotalJobs: %d\n' % MAX_UINT32)
                 
             if qInfo.maxTotJobs <> RES_UNDEF and qInfo.maxRunJobs <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxWaitingJobs: %d\n' % (qInfo.maxTotJobs - qInfo.maxRunJobs))
+            else:
+                out.write('GLUE2ComputingShareMaxWaitingJobs: %d\n' % MAX_UINT32)
                 
             if qInfo.maxMem <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxMainMemory: %d\n' % qInfo.maxMem)
+            else:
+                out.write('GLUE2ComputingShareMaxMainMemory: %d\n' % MAX_UINT64)
                 
             if qInfo.maxVMem <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxVirtualMemory: %d\n' % qInfo.maxVMem)
+            else:
+                out.write('GLUE2ComputingShareMaxVirtualMemory: %d\n' % MAX_UINT64)
             
             if CommonUtils.interfaceIsOff(config):    
                 out.write('GLUE2ComputingShareServingState: draining\n')
