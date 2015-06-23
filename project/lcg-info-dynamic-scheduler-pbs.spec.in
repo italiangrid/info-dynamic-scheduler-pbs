@@ -48,7 +48,7 @@ rm -rf %{buildroot}
 %{python_sitelib}/TorqueInfoUtils/*.py
 %{python_sitelib}/TorqueInfoUtils/*.pyc
 %{python_sitelib}/TorqueInfoUtils/*.pyo
-%if 0%{?el6}
+%if ! 0%{?el5}
 %{python_sitelib}/*.egg-info
 %endif
 
