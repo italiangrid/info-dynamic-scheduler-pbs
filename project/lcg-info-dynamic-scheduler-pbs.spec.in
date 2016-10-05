@@ -1,7 +1,7 @@
 Summary: Plugins for the lcg-info-dynamic-scheduler GIP plugin
 Name: lcg-info-dynamic-scheduler-pbs
 Version: @PKGVERSION@
-Release: @PKGRELEASE@%{?dist}%{!?dist:.el5}
+Release: @PKGRELEASE@%{?dist}
 License: Apache Software License
 Vendor: EMI
 URL: http://glite.cern.ch/
@@ -48,9 +48,7 @@ rm -rf %{buildroot}
 %{python_sitelib}/TorqueInfoUtils/*.py
 %{python_sitelib}/TorqueInfoUtils/*.pyc
 %{python_sitelib}/TorqueInfoUtils/*.pyo
-%if ! 0%{?el5}
 %{python_sitelib}/*.egg-info
-%endif
 
 %post
 TMPVAR=`grep -Eo '\[LRMS\]' /etc/lrms/scheduler.conf`
