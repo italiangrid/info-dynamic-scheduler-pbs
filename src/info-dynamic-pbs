@@ -189,24 +189,27 @@ def main():
             else:
                 out.write('GLUE2ComputingShareMaxSlotsPerJob: %d\n' % MAX_UINT32)
                 
+            # take maxjobs into consideration for max-running and max-waiting as well
+            if qInfo.maxTotJobs <> RES_UNDEF:
+                maxjobs = qInfo.maxTotJobs
+            else:
+                maxjobs = MAX_UINT32
+
             if qInfo.maxRunJobs <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxRunningJobs: %d\n' % qInfo.maxRunJobs)
             else:
-                out.write('GLUE2ComputingShareMaxRunningJobs: %d\n' % MAX_UINT32)
+                out.write('GLUE2ComputingShareMaxRunningJobs: %d\n' % maxjobs)
             
             #
             # TODO get info per vo (vomaxjobs-*)
             #      for the moment queue-wide values are used
             #    
-            if qInfo.maxTotJobs <> RES_UNDEF:
-                out.write('GLUE2ComputingShareMaxTotalJobs: %d\n' % qInfo.maxTotJobs)
-            else:
-                out.write('GLUE2ComputingShareMaxTotalJobs: %d\n' % MAX_UINT32)
+            out.write('GLUE2ComputingShareMaxTotalJobs: %d\n' % maxjobs)
                 
             if qInfo.maxTotJobs <> RES_UNDEF and qInfo.maxRunJobs <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxWaitingJobs: %d\n' % (qInfo.maxTotJobs - qInfo.maxRunJobs))
             else:
-                out.write('GLUE2ComputingShareMaxWaitingJobs: %d\n' % MAX_UINT32)
+                out.write('GLUE2ComputingShareMaxWaitingJobs: %d\n' % maxjobs)
                 
             if qInfo.maxMem <> RES_UNDEF:
                 out.write('GLUE2ComputingShareMaxMainMemory: %d\n' % qInfo.maxMem)
