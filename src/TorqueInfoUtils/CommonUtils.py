@@ -232,6 +232,12 @@ def readConfigFile(configFile):
                     group = tmpl[0].strip()
                     vo = tmpl[1].strip()
                     vomap[group] = vo
+        
+        if tmpConf.has_option('Main','enable_glue_2_1'):
+            tmps = tmpConf.get('Main', 'enable_glue_2_1').lower()
+            config['enable_glue_2_1'] = (tmps == 'true')
+        else:
+            config['enable_glue_2_1'] = False
 
         if tmpConf.has_option('LRMS','pbs-host'):
             config['pbs-host'] = tmpConf.get('LRMS', 'pbs-host')

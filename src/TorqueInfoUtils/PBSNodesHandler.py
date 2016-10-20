@@ -34,6 +34,8 @@ class CPUInfoHandler(Thread):
         self.totalCPU = 0
         self.freeCPU = 0
         self.pRegex = re.compile('^\s*([^=\s]+)\s*=(.+)$')
+        self.gpuRegex = re.compile('gpu\[\d*\]\s*=\s*')
+        self.gpuTable = dict()
     
     def setStream(self, stream):
         self.stream = stream
@@ -41,6 +43,7 @@ class CPUInfoHandler(Thread):
     def run(self):
     
         currState = None
+        currNode = None
         
         try:
             line = self.stream.readline()
@@ -67,7 +70,40 @@ class CPUInfoHandler(Thread):
                         jobList = parsed.group(2).strip()
                         if currState == 'free' and len(jobList) > 0:
                             self.freeCPU -= jobList.count(',') + 1
-                
+
+                    elif parsed.group(1) == 'gpu_status':
+
+                        gpuNodeInfo = dict()
+                        gpuNodeInfo['node_state'] = currState
+                        gpuNodeInfo['total_gpus'] = 0
+                        gpuNodeInfo['free_gpus'] = 0
+
+                        for gpuStats in self.gpuRegex.split(parsed.group(2).strip()):
+
+                            gpuStats = gpuStats.strip()
+                            if len(gpuStats) == 0:
+                                continue
+
+                            curr_gpu_use = 100
+                            curr_mem_use = 100
+                            for pStr in gpuStats.split(';'):
+                                res = self.pRegex.match(pStr)
+                                if res.group(1) == 'gpu_utilization':
+                                    curr_gpu_use = int(re.match('\d+', res.group(2)).group(0))
+                                elif res.group(1) == 'gpu_memory_utilization':
+                                    curr_mem_use = int(re.match('\d+', res.group(2)).group(0))
+                            
+                            if curr_gpu_use == 0 and curr_mem_use ==0:
+                                gpuNodeInfo['free_gpus'] += 1
+                            gpuNodeInfo['total_gpus'] += 1
+
+                        self.gpuTable[currNode] = gpuNodeInfo
+
+                else:
+                    tmps = line.strip()
+                    if len(tmps):
+                        currNode = tmps
+
                 line = self.stream.readline()
         
         except:

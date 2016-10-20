@@ -27,6 +27,7 @@ from threading import Thread
 from TorqueInfoUtils import CommonUtils
 from TorqueInfoUtils import QStatHandler
 from TorqueInfoUtils import PBSNodesHandler
+from TorqueInfoUtils import NvidiaSMIHandler
 
 from TorqueInfoUtils.QStatHandler import RES_UNDEF
 
@@ -52,6 +53,7 @@ def main():
     glue2QueueTable = dict()
     managerTable = None
     allQueues = set()
+    freeGPUSlots = 0
     
     try:
     
@@ -77,6 +79,29 @@ def main():
     
         qInfoHandlers = QStatHandler.parseAllQueuesInfo(allQueues, config["pbs-host"])
             
+        if config['enable_glue_2_1']:
+
+            for nodeName in cpuInfoHandler.gpuTable:
+            
+                nodeState = cpuInfoHandler.gpuTable[nodeName]['node_state']
+                if 'down' in nodeState or 'offline' in nodeState or 'unknown' in nodeState:
+                    continue
+                else:
+                    tmpSlots = cpuInfoHandler.gpuTable[nodeName]['total_gpus']
+
+                try:
+
+                    smiHandler = NvidiaSMIHandler.parseGPUInfo(nodeName)
+                    for nProcs in smiHandler.num_of_procs.values():
+                        if nProcs > 0:
+                            tmpSlots -= 1
+
+                    freeGPUSlots += tmpSlots
+
+                except Exception, ex:
+                    sys.stderr.write(repr(ex) + '\n')
+                    freeGPUSlots += cpuInfoHandler.gpuTable[nodeName]['free_gpus']
+
     except Exception, ex:
         sys.stderr.write(str(ex) + '\n')
         sys.exit(2)
@@ -227,6 +252,11 @@ def main():
                 out.write('GLUE2ComputingShareServingState: %s\n' % qInfo.state.lower())
                 
             out.write('GLUE2EntityCreationTime: %s\n' % now)
+            
+            if config['enable_glue_2_1']:
+
+                out.write('GLUE2ComputingShareFreeAcceleratorSlots: GPU:%d\n' % freeGPUSlots)
+            
             out.write('\n')
 
 
