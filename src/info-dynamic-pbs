@@ -54,6 +54,7 @@ def main():
     managerTable = None
     allQueues = set()
     freeGPUSlots = 0
+    usedGPUSlots = 0
     
     try:
     
@@ -83,11 +84,12 @@ def main():
 
             for nodeName in cpuInfoHandler.gpuTable:
             
-                nodeState = cpuInfoHandler.gpuTable[nodeName]['node_state']
+                gpuStats = cpuInfoHandler.gpuTable[nodeName]
+                nodeState = gpuStats['node_state']
                 if 'down' in nodeState or 'offline' in nodeState or 'unknown' in nodeState:
                     continue
                 else:
-                    tmpSlots = cpuInfoHandler.gpuTable[nodeName]['total_gpus']
+                    tmpSlots = gpuStats['total_gpus']
 
                 try:
 
@@ -97,10 +99,12 @@ def main():
                             tmpSlots -= 1
 
                     freeGPUSlots += tmpSlots
+                    usedGPUSlots += gpuStats['total_gpus'] - tmpSlots
 
                 except Exception, ex:
                     sys.stderr.write(repr(ex) + '\n')
-                    freeGPUSlots += cpuInfoHandler.gpuTable[nodeName]['free_gpus']
+                    freeGPUSlots += gpuStats['free_gpus']
+                    usedGPUSlots += gpuStats['total_gpus'] - gpuStats['free_gpus']
 
     except Exception, ex:
         sys.stderr.write(str(ex) + '\n')
@@ -256,6 +260,7 @@ def main():
             if config['enable_glue_2_1']:
 
                 out.write('GLUE2ComputingShareFreeAcceleratorSlots: GPU:%d\n' % freeGPUSlots)
+                out.write('GLUE2ComputingShareUsedAcceleratorSlots: GPU:%d\n' % usedGPUSlots)
             
             out.write('\n')
 
