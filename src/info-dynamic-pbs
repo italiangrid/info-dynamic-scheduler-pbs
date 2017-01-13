@@ -186,6 +186,8 @@ def main():
             out.write(managerDN + '\n')
             out.write('GLUE2ManagerProductVersion: %s\n' % lrmsVer)
             out.write('GLUE2EntityCreationTime: %s\n' % now)
+            out.write('GLUE2ComputingManagerTotalAcceleratorSlots: GPU:%d\n' % (freeGPUSlots + usedGPUSlots))
+            out.write('GLUE2ComputingManagerUsedAcceleratorSlots: GPU:%d\n' % usedGPUSlots)
             out.write('\n')
             
         for glue2DN in glue2QueueTable:
