@@ -104,7 +104,10 @@ fi
 ln -sf /etc/lrms/scheduler.conf /etc/lrms/pbs.conf
 
 %changelog
-* Mon Jun 09 2014 CREAM group <cream-support@lists.infn.it> - @PKGVERSION@-@PKGRELEASE@
+* Mon Jan 30 2017 CREAM group <cream-support@lists.infn.it> - @PKGVERSION@-@PKGRELEASE@
+- GPU support
+
+* Mon Jun 09 2014 CREAM group <cream-support@lists.infn.it> - 2.4.5-2
 - Fixed bug https://issues.infn.it/jira/browse/CREAM-139
 - Fixed bug https://issues.infn.it/jira/browse/CREAM-141
 - Fixed bug https://issues.infn.it/jira/browse/CREAM-154
